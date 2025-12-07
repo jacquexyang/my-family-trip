@@ -1,17 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   MapPin, Clock, Users, Share2, ChevronLeft, MoreHorizontal, Coffee, 
   Camera, Utensils, Train, Moon, Sun, Heart, Calendar, Plane, Navigation, 
   Wallet, ArrowRightLeft, Plus, X, ArrowRight, Umbrella, Car, Snowflake, 
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
-  Globe, PlusCircle, Briefcase, Lock, KeyRound
+  Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2
 } from 'lucide-react';
 
 // --- 1. 資料庫區 (Data Layer) ---
 
 const TRIP_DATA = {
   id: 'seoul_2024',
-  password: "2024", // 設定密碼，若留空 "" 則直接進入
+  password: "2024", 
   title: "冬日首爾聖誕之旅 🎄",
   subtitle: "滑雪、美食與聖誕燈飾的浪漫行",
   dates: "2024.12.21 - 2024.12.27",
@@ -21,6 +21,30 @@ const TRIP_DATA = {
     { id: 1, name: "我", avatar: "https://i.pravatar.cc/150?u=1" },
     { id: 2, name: "家人A", avatar: "https://i.pravatar.cc/150?u=5" },
     { id: 3, name: "家人B", avatar: "https://i.pravatar.cc/150?u=8" },
+  ],
+  packingList: [
+    { category: "證件與錢財", items: [
+      { id: 'p1', name: "護照 (效期6個月以上)", checked: false },
+      { id: 'p2', name: "韓幣 / 信用卡", checked: false },
+      { id: 'p3', name: "網卡 / E-sim / Wifi機", checked: false },
+      { id: 'p4', name: "機票 / 住宿憑證", checked: false }
+    ]},
+    { category: "電子產品", items: [
+      { id: 'e1', name: "轉接頭 (韓國雙圓孔)", checked: false },
+      { id: 'e2', name: "行動電源", checked: false },
+      { id: 'e3', name: "充電線 (手機/手錶)", checked: false }
+    ]},
+    { category: "衣物 (冬季)", items: [
+      { id: 'c1', name: "發熱衣 / 發熱褲", checked: false },
+      { id: 'c2', name: "羽絨外套 / 大衣", checked: false },
+      { id: 'c3', name: "圍巾 / 毛帽 / 手套", checked: false },
+      { id: 'c4', name: "好走的鞋子", checked: false }
+    ]},
+    { category: "個人用品", items: [
+      { id: 't1', name: "牙刷牙膏 (韓國環保不提供)", checked: false },
+      { id: 't2', name: "個人藥品 (感冒/腸胃/暈車)", checked: false },
+      { id: 't3', name: "保養品 / 護手霜", checked: false }
+    ]}
   ],
   days: [
     {
@@ -204,21 +228,28 @@ const TripLoginModal = ({ trip, onUnlock }) => {
 
 // 2.4 主行程介面 (Single Trip Dashboard)
 const TripDashboard = ({ tripData }) => {
-  const [activeTab, setActiveTab] = useState('schedule');
+  const [activeTab, setActiveTab] = useState('schedule'); // schedule, expenses, checklist
   const [activeDay, setActiveDay] = useState(1);
   const [likedItems, setLikedItems] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
   
+  // State for features
+  const [participants, setParticipants] = useState(tripData.participants);
+  const [packingList, setPackingList] = useState(tripData.packingList || []);
   const [expenses, setExpenses] = useState([{ id: 1, title: '預付公基金', amount: 3000, payerId: 1, date: '出發前' }]);
   const [budget, setBudget] = useState(tripData.budget || 50000);
+  
+  // UI State
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [newBudgetInput, setNewBudgetInput] = useState(budget);
-  
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [newExpense, setNewExpense] = useState({ title: '', amount: '', payerId: 1 });
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isAddPersonOpen, setIsAddPersonOpen] = useState(false);
+  const [newPersonName, setNewPersonName] = useState('');
+  const [newItemName, setNewItemName] = useState('');
 
-  // 確保天數資料存在，避免崩潰
+  // 確保天數資料存在
   const currentDayData = tripData.days?.find(d => d.day === activeDay) || tripData.days?.[0] || { items: [] };
 
   const handleShare = () => {
@@ -249,16 +280,53 @@ const TripDashboard = ({ tripData }) => {
     setIsAddExpenseOpen(false);
   };
 
-  const debts = useMemo(() => calculateDebts(expenses, tripData.participants), [expenses]);
+  const handleUpdateBudget = () => {
+    setBudget(parseInt(newBudgetInput));
+    setIsEditingBudget(false);
+  };
+
+  const handleAddPerson = () => {
+    if (!newPersonName.trim()) return;
+    const newId = participants.length > 0 ? Math.max(...participants.map(p => p.id)) + 1 : 1;
+    const newPerson = {
+      id: newId,
+      name: newPersonName,
+      avatar: `https://i.pravatar.cc/150?u=${newId + 10}` // Generate new avatar
+    };
+    setParticipants([...participants, newPerson]);
+    setNewPersonName('');
+    setIsAddPersonOpen(false);
+  };
+
+  const togglePackingItem = (categoryId, itemId) => {
+    setPackingList(prevList => prevList.map(cat => {
+      if (cat.category !== categoryId) return cat;
+      return {
+        ...cat,
+        items: cat.items.map(item => item.id === itemId ? { ...item, checked: !item.checked } : item)
+      };
+    }));
+  };
+
+  const handleAddPackingItem = (categoryIndex) => {
+    if (!newItemName.trim()) return;
+    const newItem = { id: Date.now().toString(), name: newItemName, checked: false };
+    const newList = [...packingList];
+    newList[categoryIndex].items.push(newItem);
+    setPackingList(newList);
+    setNewItemName('');
+  };
+
+  const debts = useMemo(() => calculateDebts(expenses, participants), [expenses, participants]);
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
   const budgetPercentage = Math.min((totalSpent / budget) * 100, 100);
 
   return (
     <div className="w-full min-h-screen bg-[#FDFBF7] pb-24 md:pb-0">
-      {/* 1. Hero Header - 全螢幕寬度 */}
+      {/* 1. Hero Header */}
       <div className="relative w-full h-[40vh] md:h-[50vh]">
         <img src={tripData.coverImage} alt={tripData.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-transparent to-stone-900/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-stone-900/20 to-stone-900/40"></div>
         
         {/* Top Nav */}
         <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex justify-end items-center z-10 max-w-7xl mx-auto w-full">
@@ -273,7 +341,22 @@ const TripDashboard = ({ tripData }) => {
             <span className="bg-white/20 px-2 py-0.5 rounded text-xs backdrop-blur-sm border border-white/10">{tripData.dates.split('-')[0]}</span>
             <span className="hidden md:inline">| {tripData.subtitle}</span>
           </div>
-          <h1 className="text-3xl md:text-6xl font-bold leading-tight drop-shadow-sm">{tripData.title}</h1>
+          <h1 className="text-3xl md:text-6xl font-bold leading-tight drop-shadow-sm mb-4">{tripData.title}</h1>
+          
+          {/* Participants */}
+          <div className="flex items-center gap-3">
+            <div className="flex -space-x-2">
+              {participants.map(p => (
+                <img key={p.id} src={p.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white/20" alt={p.name} title={p.name} />
+              ))}
+            </div>
+            <button 
+              onClick={() => setIsAddPersonOpen(true)}
+              className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border border-white/10 text-white"
+            >
+              <UserPlus size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -283,7 +366,7 @@ const TripDashboard = ({ tripData }) => {
         </div>
       )}
 
-      {/* 2. Content Container - 限制最大寬度以優化閱讀體驗 */}
+      {/* 2. Content Container */}
       <div className="max-w-4xl mx-auto px-4 -mt-8 relative z-20">
         <div className="bg-white rounded-3xl shadow-xl border border-stone-100 overflow-hidden min-h-[60vh]">
           
@@ -292,18 +375,22 @@ const TripDashboard = ({ tripData }) => {
             <button onClick={() => setActiveTab('schedule')} className={`flex-1 py-5 font-bold text-lg flex justify-center items-center gap-2 transition-colors ${activeTab === 'schedule' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}><Calendar size={20}/> 行程規劃</button>
             <div className="w-px bg-stone-100 my-4"></div>
             <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-5 font-bold text-lg flex justify-center items-center gap-2 transition-colors ${activeTab === 'expenses' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}><Wallet size={20}/> 預算記帳</button>
+            <div className="w-px bg-stone-100 my-4"></div>
+            <button onClick={() => setActiveTab('checklist')} className={`flex-1 py-5 font-bold text-lg flex justify-center items-center gap-2 transition-colors ${activeTab === 'checklist' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}><CheckSquare size={20}/> 行前清單</button>
           </div>
 
-          {/* Mobile Tabs (Bottom Bar Replacement for content switch) */}
+          {/* Mobile Tabs */}
           <div className="md:hidden flex p-2 bg-stone-100/50 rounded-t-3xl border-b border-stone-200">
              <button onClick={() => setActiveTab('schedule')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'schedule' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>行程</button>
              <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'expenses' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>記帳</button>
+             <button onClick={() => setActiveTab('checklist')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'checklist' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>清單</button>
           </div>
 
+          {/* TAB: 行程 Schedule */}
           {activeTab === 'schedule' && (
             <div className="pb-12">
               {/* Day Selector */}
-              <div className="sticky top-0 md:top-[68px] z-20 bg-white/95 backdrop-blur-md border-b border-stone-100 pt-4 pb-2 px-4 md:px-8">
+              <div className="sticky top-0 md:top-[74px] z-20 bg-white/95 backdrop-blur-md border-b border-stone-100 pt-4 pb-2 px-4 md:px-8">
                 <div className="flex justify-between items-end mb-3">
                   <div>
                     <h2 className="text-2xl font-bold text-stone-800">Day {currentDayData.day}</h2>
@@ -315,7 +402,7 @@ const TripDashboard = ({ tripData }) => {
                 </div>
                 
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                  {tripData.days.map((d) => (
+                  {TRIP_DATA.days.map((d) => (
                     <button key={d.day} onClick={() => setActiveDay(d.day)} className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeDay === d.day ? "bg-stone-900 text-white shadow-md scale-105" : "bg-stone-100 text-stone-400 hover:bg-stone-200"}`}>Day {d.day}</button>
                   ))}
                 </div>
@@ -368,9 +455,9 @@ const TripDashboard = ({ tripData }) => {
             </div>
           )}
 
+          {/* TAB: 記帳 Expenses */}
           {activeTab === 'expenses' && (
             <div className="p-6 md:p-10 space-y-8">
-              {/* Budget Card */}
               <div className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
                 <Wallet size={160} className="absolute -right-8 -bottom-8 text-white/5" />
                 <p className="text-xs font-bold text-stone-400 tracking-widest uppercase mb-1">Total Budget</p>
@@ -401,6 +488,23 @@ const TripDashboard = ({ tripData }) => {
                 <PlusCircle size={20}/> 新增一筆消費
               </button>
 
+              {/* Settlement Section */}
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                <h3 className="font-bold text-stone-800 mb-4 flex items-center gap-2"><ArrowRightLeft size={18} /> 智慧結算</h3>
+                {debts.length === 0 ? <p className="text-stone-400 text-sm text-center py-4">目前沒有款項需結算</p> : (
+                  <div className="space-y-3">
+                    {debts.map((debt, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm p-3 bg-stone-50 rounded-xl">
+                        <div className="flex items-center gap-2"><img src={debt.from.avatar} className="w-6 h-6 rounded-full" alt={debt.from.name} /><span className="font-bold text-stone-700">{debt.from.name}</span></div>
+                        <span className="text-xs text-stone-400">給</span>
+                        <div className="flex items-center gap-2"><img src={debt.to.avatar} className="w-6 h-6 rounded-full" alt={debt.to.name} /><span className="font-bold text-stone-700">{debt.to.name}</span></div>
+                        <span className="font-bold text-stone-800">${debt.amount.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* History */}
               <div className="space-y-4">
                 <h3 className="font-bold text-stone-800 text-lg">消費紀錄</h3>
@@ -410,7 +514,7 @@ const TripDashboard = ({ tripData }) => {
                       <div className="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-500"><Wallet size={18}/></div>
                       <div>
                         <p className="font-bold text-stone-800">{exp.title}</p>
-                        <p className="text-xs text-stone-400">{exp.date} • {TRIP_DATA.participants.find(p => p.id === exp.payerId)?.name} 付款</p>
+                        <p className="text-xs text-stone-400">{exp.date} • {participants.find(p => p.id === exp.payerId)?.name} 付款</p>
                       </div>
                     </div>
                     <span className="font-bold text-stone-900">${exp.amount.toLocaleString()}</span>
@@ -419,6 +523,51 @@ const TripDashboard = ({ tripData }) => {
               </div>
             </div>
           )}
+
+          {/* TAB: 行前清單 Checklist */}
+          {activeTab === 'checklist' && (
+             <div className="p-6 md:p-10 space-y-8 min-h-[60vh]">
+               <div className="flex justify-between items-end mb-4">
+                 <div>
+                   <h2 className="text-2xl font-bold text-stone-800">行李清單</h2>
+                   <p className="text-stone-400 text-sm mt-1">Checklist before you go</p>
+                 </div>
+               </div>
+
+               {packingList.map((category, catIdx) => (
+                 <div key={catIdx} className="bg-stone-50 rounded-2xl p-5 border border-stone-100">
+                   <h3 className="font-bold text-stone-700 mb-4 flex items-center gap-2">
+                     <div className="w-2 h-2 bg-stone-400 rounded-full"></div> {category.category}
+                   </h3>
+                   <div className="space-y-3">
+                     {category.items.map((item) => (
+                       <div key={item.id} className="flex items-center gap-3 group cursor-pointer" onClick={() => togglePackingItem(category.category, item.id)}>
+                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-stone-800 border-stone-800' : 'border-stone-300 bg-white'}`}>
+                           {item.checked && <CheckCircle2 size={14} className="text-white" />}
+                         </div>
+                         <span className={`text-sm transition-all ${item.checked ? 'text-stone-400 line-through' : 'text-stone-700'}`}>{item.name}</span>
+                       </div>
+                     ))}
+                     {/* Add Item Input (Simple) */}
+                     <div className="flex gap-2 mt-4 pt-2 border-t border-stone-200/50">
+                        <input 
+                          type="text" 
+                          placeholder="新增項目..." 
+                          className="flex-1 bg-transparent text-sm focus:outline-none"
+                          value={newItemName}
+                          onChange={(e) => setNewItemName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if(e.key === 'Enter') handleAddPackingItem(catIdx);
+                          }}
+                        />
+                        <button onClick={() => handleAddPackingItem(catIdx)} className="text-stone-400 hover:text-stone-800"><PlusCircle size={16}/></button>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+             </div>
+          )}
+
         </div>
       </div>
 
@@ -429,6 +578,7 @@ const TripDashboard = ({ tripData }) => {
           {activeTab === 'expenses' ? <PlusCircle size={24}/> : <Wallet size={24}/>}
           <span className="text-[10px] mt-1 font-medium">{activeTab === 'expenses' ? '新增' : '記帳'}</span>
         </button>
+        <button onClick={() => setActiveTab('checklist')} className={`flex flex-col items-center transition-colors ${activeTab === 'checklist' ? 'text-stone-900' : 'text-stone-400'}`}><CheckSquare size={24}/><span className="text-[10px] mt-1 font-medium">清單</span></button>
       </div>
 
       {/* Add Expense Modal */}
@@ -442,10 +592,23 @@ const TripDashboard = ({ tripData }) => {
               <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400">$</span><input type="number" placeholder="0" className="w-full p-4 pl-8 bg-stone-50 rounded-xl border border-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-900 font-bold text-lg" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})} /></div>
               <div>
                 <p className="text-xs text-stone-400 mb-2 font-bold uppercase">誰付款?</p>
-                <div className="flex gap-2 overflow-x-auto pb-2">{TRIP_DATA.participants.map(p => (<button key={p.id} onClick={() => setNewExpense({...newExpense, payerId: p.id})} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${newExpense.payerId === p.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'}`}><img src={p.avatar} className="w-5 h-5 rounded-full" alt=""/> <span className="text-xs font-bold">{p.name}</span></button>))}</div>
+                <div className="flex gap-2 overflow-x-auto pb-2">{participants.map(p => (<button key={p.id} onClick={() => setNewExpense({...newExpense, payerId: p.id})} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${newExpense.payerId === p.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'}`}><img src={p.avatar} className="w-5 h-5 rounded-full" alt=""/> <span className="text-xs font-bold">{p.name}</span></button>))}</div>
               </div>
               <button onClick={handleAddExpense} className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold text-lg hover:bg-stone-800 transition-colors shadow-lg">確認新增</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Person Modal */}
+      {isAddPersonOpen && (
+        <div className="fixed inset-0 z-[80] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
+             <button onClick={() => setIsAddPersonOpen(false)} className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600"><X size={20}/></button>
+             <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400"><UserPlus size={32}/></div>
+             <h3 className="text-lg font-bold mb-4">新增旅伴</h3>
+             <input type="text" placeholder="輸入名字..." className="w-full p-3 bg-stone-50 border border-stone-100 rounded-xl mb-4 text-center focus:outline-none focus:ring-2 focus:ring-stone-900" value={newPersonName} onChange={e => setNewPersonName(e.target.value)} />
+             <button onClick={handleAddPerson} className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold">加入行程</button>
           </div>
         </div>
       )}
