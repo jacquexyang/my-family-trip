@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   MapPin, Clock, Users, Share2, ChevronLeft, MoreHorizontal, Coffee, 
   Camera, Utensils, Train, Moon, Sun, Heart, Calendar, Plane, Navigation, 
@@ -279,6 +279,13 @@ const TripDashboard = ({ tripData }) => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleNavigation = (location, title) => {
+    const query = location || title;
+    // 使用 Google Maps Web Search API，這在手機上會嘗試開啟 App，電腦上開網頁
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    window.open(url, '_blank');
+  };
+
   const handleAddExpense = () => {
     if (!newExpense.title || !newExpense.amount) return;
     const expense = {
@@ -309,6 +316,11 @@ const TripDashboard = ({ tripData }) => {
     setParticipants([...participants, newPerson]);
     setNewPersonName('');
     setIsAddPersonOpen(false);
+  };
+
+  const handleRemovePerson = (id) => {
+    // 簡單的刪除邏輯，實際應用可能要考慮是否有人已經有記帳紀錄
+    setParticipants(participants.filter(p => p.id !== id));
   };
 
   const togglePackingItem = (categoryId, itemId) => {
@@ -437,10 +449,14 @@ const TripDashboard = ({ tripData }) => {
                             <span className="text-xs font-bold text-stone-400 flex items-center gap-1 bg-stone-50 px-2 py-1 rounded"><Clock size={12}/> {item.time}</span>
                             <Tag type={item.type} />
                           </div>
-                          <div className="pl-2">
-                            <h3 className="text-lg font-bold text-stone-800 mb-1">{item.title}</h3>
+                          <div className="pl-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => item.location ? handleNavigation(item.location, item.title) : null}>
+                            <h3 className="text-lg font-bold text-stone-800 mb-1 flex items-center gap-2">
+                              {item.title}
+                              {item.location && <Navigation size={14} className="text-blue-500" />}
+                            </h3>
                             <p className="text-sm text-stone-600 mb-3 flex items-start gap-1.5"><MapPin size={14} className="mt-0.5 shrink-0 text-stone-400"/> {item.note}</p>
                             {item.desc && <div className="text-xs text-stone-500 bg-stone-50 p-3 rounded-xl leading-relaxed mb-4 whitespace-pre-line">{item.desc}</div>}
+                          </div>
                             
                             <div className="flex gap-2">
                               {item.location && (
@@ -454,7 +470,7 @@ const TripDashboard = ({ tripData }) => {
                                 </a>
                               )}
                             </div>
-                          </div>
+                          
                         </div>
                       </div>
                     );
@@ -618,6 +634,30 @@ const TripDashboard = ({ tripData }) => {
         <div className="fixed inset-0 z-[80] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
              <button onClick={() => setIsAddPersonOpen(false)} className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600"><X size={20}/></button>
+             
+             {/* List of current participants for management */}
+             <div className="mb-6 text-left">
+                <h4 className="text-sm font-bold text-stone-500 mb-3 uppercase tracking-wider">目前成員</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                  {participants.map(p => (
+                    <div key={p.id} className="flex justify-between items-center p-2 bg-stone-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <img src={p.avatar} className="w-8 h-8 rounded-full" alt={p.name} />
+                        <span className="font-medium text-stone-700">{p.name}</span>
+                      </div>
+                      {/* Prevent removing the last person or specific logic can be added */}
+                      <button 
+                        onClick={() => handleRemovePerson(p.id)}
+                        className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="移除"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+             </div>
+
              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400"><UserPlus size={32}/></div>
              <h3 className="text-lg font-bold mb-4">新增旅伴</h3>
              <input type="text" placeholder="輸入名字..." className="w-full p-3 bg-stone-50 border border-stone-100 rounded-xl mb-4 text-center focus:outline-none focus:ring-2 focus:ring-stone-900" value={newPersonName} onChange={e => setNewPersonName(e.target.value)} />
