@@ -1,17 +1,18 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   MapPin, Clock, Users, Share2, ChevronLeft, MoreHorizontal, Coffee, 
   Camera, Utensils, Train, Moon, Sun, Heart, Calendar, Plane, Navigation, 
   Wallet, ArrowRightLeft, Plus, X, ArrowRight, Umbrella, Car, Snowflake, 
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
-  Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2
+  Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
+  AlertCircle
 } from 'lucide-react';
 
 // --- 1. 資料庫區 (Data Layer) ---
 
 const TRIP_DATA = {
   id: 'seoul_2024',
-  password: "2024", 
+  password: "2024", // 設定密碼，若留空 "" 則直接進入
   title: "冬日首爾聖誕之旅 🎄",
   subtitle: "滑雪、美食與聖誕燈飾的浪漫行",
   dates: "2024.12.21 - 2024.12.27",
@@ -25,9 +26,10 @@ const TRIP_DATA = {
   packingList: [
     { category: "證件與錢財", items: [
       { id: 'p1', name: "護照 (效期6個月以上)", checked: false },
-      { id: 'p2', name: "韓幣 / 信用卡", checked: false },
+      { id: 'p2', name: "韓幣 / 信用卡 / WOWPASS", checked: false },
       { id: 'p3', name: "網卡 / E-sim / Wifi機", checked: false },
-      { id: 'p4', name: "機票 / 住宿憑證", checked: false }
+      { id: 'p4', name: "機票 / 住宿憑證", checked: false },
+      { id: 'p5', name: "T-money 交通卡", checked: false }
     ]},
     { category: "電子產品", items: [
       { id: 'e1', name: "轉接頭 (韓國雙圓孔)", checked: false },
@@ -37,13 +39,13 @@ const TRIP_DATA = {
     { category: "衣物 (冬季)", items: [
       { id: 'c1', name: "發熱衣 / 發熱褲", checked: false },
       { id: 'c2', name: "羽絨外套 / 大衣", checked: false },
-      { id: 'c3', name: "圍巾 / 毛帽 / 手套", checked: false },
+      { id: 'c3', name: "圍巾 / 毛帽 / 手套 (滑雪必備)", checked: false },
       { id: 'c4', name: "好走的鞋子", checked: false }
     ]},
     { category: "個人用品", items: [
       { id: 't1', name: "牙刷牙膏 (韓國環保不提供)", checked: false },
       { id: 't2', name: "個人藥品 (感冒/腸胃/暈車)", checked: false },
-      { id: 't3', name: "保養品 / 護手霜", checked: false }
+      { id: 't3', name: "保養品 / 護手霜 / 暖暖包", checked: false }
     ]}
   ],
   days: [
@@ -53,13 +55,13 @@ const TRIP_DATA = {
       date: "12/21 (六)",
       weather: "snow",
       items: [
-        { id: 101, time: "07:00", type: "transport", title: "桃園機場起飛", note: "長榮航空 BR170", desc: "04:30 抵達機場辦理登機。預計 10:30 抵達仁川。", icon: Plane, location: "Taoyuan International Airport" },
-        { id: 102, time: "10:30", type: "transport", title: "抵達仁川機場", note: "入境審查", icon: MapPin, location: "Incheon International Airport" },
-        { id: 1025, time: "11:45", type: "transport", title: "機場 ➔ 弘大", note: "AREX 一般列車", desc: "搭乘藍色一般列車至弘大入口站 (約53分)。", icon: Train, location: "Hongik University Station" },
-        { id: 103, time: "13:00", type: "hotel", title: "民宿 Check-in", note: "The Purple Stay", desc: "弘大 3樓 (MAX7)。地址: 18 Sinchon-ro 8-gil, Mapo-gu。", icon: Moon, location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" },
-        { id: 104, time: "14:00", type: "sightseeing", title: "亂打秀", note: "弘大劇場", desc: "體驗韓國經典打擊樂表演。", icon: Users, location: "29 Yanghwa-ro 16-gil, Mapo-gu, Seoul" },
-        { id: 105, time: "17:00", type: "food", title: "弘大晚餐", note: "商圈美食探索", icon: Utensils, location: "Hongdae Shopping Street" },
-        { id: 107, time: "22:00", type: "food", title: "宵夜儀式", note: "橋村炸雞", desc: "必點蜂蜜口味 (Honey Combo) + 超商延世生乳包。", icon: Coffee, location: "Kyochon Chicken Hongdae" },
+        { id: 101, time: "07:05", type: "transport", title: "桃園機場起飛", note: "長榮航空 BR170", desc: "預計 10:30 抵達仁川機場 (ICN)。", icon: Plane, location: "Taoyuan International Airport" },
+        { id: 102, time: "11:40", type: "transport", title: "前往弘大", note: "AREX 機場快線 (普通車)", desc: "搭乘普通車前往弘大入口站 (約53分)。\n建議先在機場儲值好 T-money。", icon: Train, location: "Incheon International Airport" },
+        { id: 103, time: "12:50", type: "info", title: "⚠️ 重要：寄放行李", note: "弘大站 7號出口 RAON", desc: "或使用站內置物櫃。不要先去民宿，時間不夠！", icon: AlertCircle, location: "Hongik University Station Exit 7" },
+        { id: 104, time: "13:10", type: "food", title: "弘大午餐", note: "商圈簡單用餐", icon: Utensils, location: "Hongdae Shopping Street" },
+        { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "Hongdae Nanta Theatre" },
+        { id: 106, time: "15:30", type: "hotel", title: "Check-in", note: "回車站取行李 -> 民宿", icon: Moon, location: "Hongik University Station" },
+        { id: 107, time: "18:00", type: "food", title: "弘大/新村晚餐", note: "週六熱鬧街頭", desc: "晚餐後可逛街，欣賞街頭表演。", icon: Coffee, location: "Hongdae Shopping Street" },
       ]
     },
     {
@@ -68,12 +70,14 @@ const TRIP_DATA = {
       date: "12/22 (日)",
       weather: "sunny",
       items: [
-        { id: 201, time: "09:00", type: "transport", title: "前往江華島", note: "公車 3000/3000A", desc: "新村站4號出口 / 弘大2號出口搭乘。", icon: Car, location: "Hongik University Station Exit 2" },
-        { id: 202, time: "11:00", type: "sightseeing", title: "Mega Luge", note: "斜坡滑車", desc: "江華海邊度假村。風大請戴手套！", icon: Users, location: "Ganghwa Seaside Resort Luge" },
-        { id: 203, time: "13:00", type: "food", title: "午餐：山塘", note: "韓定食", icon: Utensils, location: "Sandang Ganghwa" },
-        { id: 204, time: "15:00", type: "food", title: "朝陽紡織", note: "復古咖啡廳", desc: "廢棄紡織廠改建，超好拍的網美景點。", icon: Coffee, location: "Joyang Bangjik" },
-        { id: 205, time: "16:30", type: "transport", title: "返回首爾", note: "巴士/包車", icon: Car, location: "Hongik University Station" },
-        { id: 206, time: "19:00", type: "sightseeing", title: "明洞聖誕燈飾", note: "新世界百貨", desc: "欣賞外牆投影秀。", icon: Camera, location: "Shinsegae Department Store Myeongdong" },
+        { id: 201, time: "09:00", type: "transport", title: "包車出發", note: "民宿門口集合", desc: "前往江華島一日遊。", icon: Car, location: "Hongdae" },
+        { id: 202, time: "10:30", type: "sightseeing", title: "江華島 Luge", note: "斜坡滑車", desc: "刺激好玩的斜坡滑車體驗。", icon: Users, location: "Ganghwa Seaside Resort Luge" },
+        { id: 203, time: "12:30", type: "food", title: "午餐：韓定食", note: "江華島特色料理", icon: Utensils, location: "Ganghwa-gun" },
+        { id: 204, time: "13:30", type: "sightseeing", title: "小倉織物體驗館", note: "手帕蓋章 DIY", icon: Gift, location: "Sochang Experience Center" },
+        { id: 205, time: "14:30", type: "food", title: "朝陽紡織咖啡廳", note: "網美打卡點", desc: "廢棄紡織廠改建的超大美術館級咖啡廳。", icon: Coffee, location: "Joyang Bangjik" },
+        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "⚠️ 需帶護照", desc: "這裡有星巴克，可以眺望北韓景觀。", icon: MapPin, location: "Aegibong Peace Eco Park" },
+        { id: 207, time: "19:00", type: "transport", title: "返回弘大/新村", note: "下車用餐", icon: Car, location: "Sinchon Station" },
+        { id: 208, time: "19:30", type: "food", title: "晚餐：暖身鍋物", note: "一隻雞 或 部隊鍋", desc: "消除一整天的疲勞。", icon: Utensils, location: "Sinchon" },
       ]
     },
     {
@@ -82,11 +86,11 @@ const TRIP_DATA = {
       date: "12/23 (一)",
       weather: "snow",
       items: [
-        { id: 300, time: "06:40", type: "transport", title: "滑雪團集合", note: "弘大8號出口", desc: "準時出發！前往芝山滑雪場。", icon: Car, location: "Hongik University Station Exit 8" },
-        { id: 301, time: "08:00", type: "sightseeing", title: "芝山滑雪場", note: "Jisan Forest Resort", desc: "含裝備租借、入門課程、自由練習。", icon: Snowflake, location: "Jisan Forest Resort" },
-        { id: 305, time: "18:00", type: "transport", title: "返回弘大", note: "行程結束", icon: MapPin, location: "Hongik University Station" },
-        { id: 306, time: "18:30", type: "food", title: "胖胖豬頰肉", note: "燒肉補元氣", desc: "滑雪後就是要大口吃肉！", icon: Utensils, location: "Pang Pang Pork Jowl Hongdae", link: "https://creatrip.com/zh-TW/userblog/3438" },
-        { id: 308, time: "20:30", type: "sightseeing", title: "舒壓按摩", note: "The Foot Shop", desc: "緩解滑雪後的肌肉痠痛。", icon: Moon, location: "The Foot Shop Hongdae" },
+        { id: 301, time: "07:30", type: "transport", title: "滑雪團集合", note: "KKday 行程 (弘大)", desc: "請依憑證上的集合時間為準 (通常 07:00-08:00)。", icon: Car, location: "Hongik University Station Exit 8" },
+        { id: 302, time: "10:00", type: "sightseeing", title: "芝山森林滑雪渡假村", note: "全天滑雪體驗", desc: "享受滑雪樂趣！", icon: Snowflake, location: "Jisan Forest Resort" },
+        { id: 303, time: "17:30", type: "transport", title: "返回首爾", note: "約 18:00 抵達弘大", icon: Car, location: "Hongik University Station" },
+        { id: 304, time: "18:30", type: "food", title: "晚餐：韓國烤肉", note: "補充體力", desc: "滑雪消耗大，建議吃三層肉或韓牛。", icon: Utensils, location: "Hongdae BBQ Street" },
+        { id: 305, time: "20:30", type: "info", title: "早點休息", note: "養精蓄銳", icon: Moon, location: "Hongdae" },
       ]
     },
     {
@@ -95,10 +99,13 @@ const TRIP_DATA = {
       date: "12/24 (二)",
       weather: "snow",
       items: [
-        { id: 401, time: "09:30", type: "transport", title: "前往樂天", note: "地鐵2號線", desc: "弘大 ➔ 蠶室站 (約45分)。", icon: Train, location: "Jamsil Station" },
-        { id: 402, time: "10:30", type: "sightseeing", title: "樂天世界", note: "Lotte World", desc: "室內探險世界 + 室外魔幻島。可考慮買 Magic Pass 省排隊。", icon: Castle, location: "Lotte World" },
-        { id: 404, time: "18:00", type: "sightseeing", title: "聖誕市集", note: "樂天世界塔", desc: "平安夜必逛！超大聖誕樹與市集。", icon: Gift, location: "Lotte World Mall" },
-        { id: 405, time: "19:30", type: "food", title: "松理團路晚餐", note: "文青美食街", desc: "Godosik 烤肉或 Mippeu Dong。", icon: Utensils, location: "Songnidan-gil" },
+        { id: 401, time: "09:00", type: "transport", title: "前往三成站", note: "地鐵 2號線", desc: "弘大 ➔ 三成站 (Samseong)，直通 COEX Mall。", icon: Train, location: "Samseong Station" },
+        { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "欣賞發光書牆與聖誕裝置藝術，拍照打卡。", icon: Camera, location: "Starfield Library" },
+        { id: 403, time: "11:30", type: "food", title: "午餐：COEX Mall", note: "建議在此用餐", desc: "選擇多且環境好。先吃飽再進樂天世界戰鬥。", icon: Utensils, location: "COEX Mall" },
+        { id: 404, time: "12:30", type: "transport", title: "移動至蠶室", note: "地鐵 2號線", desc: "三成 ➔ 蠶室 (Jamsil)，約 6 分鐘。", icon: Train, location: "Jamsil Station" },
+        { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "下午入場。室內探險世界 + 室外魔幻島。可玩到晚上看遊行。", icon: Castle, location: "Lotte World" },
+        { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾 & 夜景", desc: "離開樂園後欣賞外圍燈飾與超大聖誕樹。", icon: Gift, location: "Seokchon Lake" },
+        { id: 407, time: "21:30", type: "transport", title: "返回弘大", note: "地鐵 2號線直達", icon: Train, location: "Hongik University Station" },
       ]
     },
     {
@@ -107,11 +114,13 @@ const TRIP_DATA = {
       date: "12/25 (三)",
       weather: "snow",
       items: [
-        { id: 501, time: "10:00", type: "sightseeing", title: "景福宮", note: "穿韓服體驗", desc: "順遊光化門廣場。", icon: Castle, location: "Gyeongbokgung Palace" },
-        { id: 502, time: "12:30", type: "food", title: "通仁市場", note: "銅錢便當", desc: "用古銅錢買便當吃。", icon: Utensils, location: "Tongin Market" },
-        { id: 503, time: "15:00", type: "sightseeing", title: "三清洞", note: "韓屋散步", icon: Coffee, location: "Samcheong-dong" },
-        { id: 504, time: "18:30", type: "sightseeing", title: "光化門耶誕市集", note: "聖誕節重頭戲", desc: "巨型聖誕樹與燈光秀。", icon: Gift, location: "Gwanghwamun Square" },
-        { id: 505, time: "20:00", type: "food", title: "聖誕晚餐", note: "鐘路美食", icon: Utensils, location: "Gwanghwamun Food Street" },
+        { id: 501, time: "09:30", type: "transport", title: "前往光化門", note: "地鐵/公車", icon: Train, location: "Gwanghwamun Station" },
+        { id: 502, time: "10:00", type: "sightseeing", title: "光化門", note: "守門將換崗儀式", icon: Users, location: "Gwanghwamun" },
+        { id: 503, time: "10:30", type: "sightseeing", title: "景福宮", note: "參觀古宮", desc: "感受朝鮮王朝氣息。", icon: Castle, location: "Gyeongbokgung Palace" },
+        { id: 504, time: "12:30", type: "food", title: "通仁市場 (午餐)", note: "銅錢便當", desc: "用古銅錢換購市場小吃。", icon: Utensils, location: "Tongin Market" },
+        { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "Seochon", desc: "韓屋咖啡廳巡禮、逛文創小店。", icon: Coffee, location: "Seochon" },
+        { id: 506, time: "17:00", type: "sightseeing", title: "漫步回光化門", note: "欣賞街景", icon: MapPin, location: "Gwanghwamun Square" },
+        { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "Seoul Lantern Festival", desc: "感受濃厚的聖誕氣氛。", icon: Gift, location: "Gwanghwamun Square" },
       ]
     },
     {
@@ -120,10 +129,11 @@ const TRIP_DATA = {
       date: "12/26 (四)",
       weather: "sunny",
       items: [
-        { id: 601, time: "10:00", type: "food", title: "廣藏市場", note: "早午餐", desc: "綠豆煎餅、生拌牛肉、麻藥飯捲。", icon: Utensils, location: "Gwangjang Market" },
-        { id: 602, time: "13:00", type: "sightseeing", title: "昌信洞", note: "文具玩具市場", desc: "挖寶、買便宜伴手禮。", icon: ShoppingBag, location: "Changsin-dong Stationery Toy Market" },
-        { id: 603, time: "15:30", type: "sightseeing", title: "DDP", note: "設計廣場", desc: "欣賞建築與設計市集。", icon: Camera, location: "Dongdaemun Design Plaza" },
-        { id: 604, time: "18:00", type: "sightseeing", title: "首爾燈節", note: "清溪川", desc: "冬季限定水面燈飾。", icon: Gift, location: "Cheonggyecheon Stream" },
+        { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "文具控必逛，價格實惠。", icon: ShoppingBag, location: "Changsin-dong Stationery Toy Market" },
+        { id: 602, time: "12:30", type: "food", title: "廣藏市場 (午餐)", note: "必吃三寶", desc: "綠豆餅、生牛肉、麻藥飯捲。", icon: Utensils, location: "Gwangjang Market" },
+        { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞 或 弘大", desc: "選擇一處逛街採買。", icon: Users, location: "Seongsu-dong" },
+        { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 電子聖誕裝飾", desc: "觀賞建築物外牆的燈光秀。", icon: Camera, location: "Shinsegae Department Store Myeongdong" },
+        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川 / 東大門", note: "首爾燈節 & 晚餐", desc: "散步觀賞燈飾，晚餐可去東大門一隻雞胡同。", icon: Gift, location: "Cheonggyecheon Stream" },
       ]
     },
     {
@@ -132,10 +142,13 @@ const TRIP_DATA = {
       date: "12/27 (五)",
       weather: "sunny",
       items: [
-        { id: 701, time: "10:00", type: "sightseeing", title: "望遠市場", note: "在地生活", desc: "Ugly Bakery 麵包、望遠可樂餅。", icon: ShoppingBag, location: "Mangwon Market" },
-        { id: 702, time: "12:00", type: "food", title: "酥脆馬車", note: "炸豬排", desc: "市場必吃美食。", icon: Utensils, location: "Mangwon Market Food" },
-        { id: 703, time: "15:30", type: "transport", title: "前往機場", note: "仁川機場", desc: "預留時間辦理退稅。", icon: Train, location: "Incheon International Airport Terminal 1" },
-        { id: 704, time: "19:45", type: "transport", title: "搭機返台", note: "BR159", icon: Plane, location: "Incheon International Airport" },
+        { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李", desc: "建議寄放在弘大站 (RAON 或 T-Luggage)，方便去機場。", icon: Moon, location: "Hongik University Station" },
+        { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "弘大搭地鐵6號線至望遠站 (1站)。\n必吃/買：炸雞丁、可樂餅、雨靴、乾貨泡菜。", icon: ShoppingBag, location: "Mangwon Market" },
+        { id: 703, time: "13:00", type: "food", title: "望遠洞咖啡廳", note: "悠閒午後", desc: "在市場周邊的文青咖啡廳休息。", icon: Coffee, location: "Mangwon-dong" },
+        { id: 704, time: "15:30", type: "transport", title: "取行李", note: "返回弘大入口站", icon: MapPin, location: "Hongik University Station" },
+        { id: 705, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週五傍晚易塞車，強烈建議搭快線/地鐵。\n約 17:15 抵達仁川機場。", icon: Train, location: "Incheon International Airport" },
+        { id: 706, time: "17:30", type: "transport", title: "機場報到", note: "辦理登機、退稅", icon: CheckCircle2, location: "Incheon International Airport" },
+        { id: 707, time: "19:45", type: "transport", title: "搭機返台", note: "長榮航空 BR159", desc: "21:40 抵達桃園機場 (TPE)。", icon: Plane, location: "Incheon International Airport" },
       ]
     }
   ]
@@ -415,11 +428,11 @@ const TripDashboard = ({ tripData }) => {
                     const Icon = item.icon;
                     return (
                       <div key={item.id} className="relative group">
-                        <div className={`absolute -left-[41px] md:-left-[49px] top-0 w-8 h-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${item.type === 'transport' ? 'bg-blue-500 text-white' : item.type === 'food' ? 'bg-orange-500 text-white' : item.type === 'sightseeing' ? 'bg-emerald-500 text-white' : 'bg-stone-400 text-white'}`}>
+                        <div className={`absolute -left-[41px] md:-left-[49px] top-0 w-8 h-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${item.type === 'transport' ? 'bg-blue-500 text-white' : item.type === 'food' ? 'bg-orange-500 text-white' : item.type === 'sightseeing' ? 'bg-emerald-500 text-white' : item.type === 'info' ? 'bg-red-500 text-white' : 'bg-stone-400 text-white'}`}>
                           <Icon size={14} strokeWidth={3} />
                         </div>
                         <div className="bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow p-5 relative overflow-hidden">
-                          <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.type === 'transport' ? 'bg-blue-500' : item.type === 'food' ? 'bg-orange-500' : item.type === 'sightseeing' ? 'bg-emerald-500' : 'bg-stone-400'}`}></div>
+                          <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.type === 'transport' ? 'bg-blue-500' : item.type === 'food' ? 'bg-orange-500' : item.type === 'sightseeing' ? 'bg-emerald-500' : item.type === 'info' ? 'bg-red-500' : 'bg-stone-400'}`}></div>
                           <div className="flex justify-between items-start mb-2 pl-2">
                             <span className="text-xs font-bold text-stone-400 flex items-center gap-1 bg-stone-50 px-2 py-1 rounded"><Clock size={12}/> {item.time}</span>
                             <Tag type={item.type} />
@@ -427,7 +440,7 @@ const TripDashboard = ({ tripData }) => {
                           <div className="pl-2">
                             <h3 className="text-lg font-bold text-stone-800 mb-1">{item.title}</h3>
                             <p className="text-sm text-stone-600 mb-3 flex items-start gap-1.5"><MapPin size={14} className="mt-0.5 shrink-0 text-stone-400"/> {item.note}</p>
-                            {item.desc && <div className="text-xs text-stone-500 bg-stone-50 p-3 rounded-xl leading-relaxed mb-4">{item.desc}</div>}
+                            {item.desc && <div className="text-xs text-stone-500 bg-stone-50 p-3 rounded-xl leading-relaxed mb-4 whitespace-pre-line">{item.desc}</div>}
                             
                             <div className="flex gap-2">
                               {item.location && (
