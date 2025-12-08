@@ -20,8 +20,7 @@ const TRIP_DATA = {
   coverImage: "https://images.unsplash.com/photo-1542044896530-05d85be9b11a?q=80&w=2000&auto=format&fit=crop", 
   participants: [
     { id: 1, name: "我", avatar: "https://i.pravatar.cc/150?u=1" },
-    { id: 2, name: "家人A", avatar: "https://i.pravatar.cc/150?u=5" },
-    { id: 3, name: "家人B", avatar: "https://i.pravatar.cc/150?u=8" },
+    { id: 2, name: "楓家", avatar: "https://i.pravatar.cc/150?u=5" },
   ],
   packingList: [
     { category: "證件與錢財", items: [
@@ -29,7 +28,7 @@ const TRIP_DATA = {
       { id: 'p2', name: "韓幣 / 信用卡 / WOWPASS", checked: false },
       { id: 'p3', name: "網卡 / E-sim / Wifi機", checked: false },
       { id: 'p4', name: "機票 / 住宿憑證", checked: false },
-      { id: 'p5', name: "T-money 交通卡", checked: false }
+      { id: 'p5', name: "T-money 交通卡 (建議先儲值)", checked: false }
     ]},
     { category: "電子產品", items: [
       { id: 'e1', name: "轉接頭 (韓國雙圓孔)", checked: false },
@@ -60,8 +59,8 @@ const TRIP_DATA = {
         { id: 103, time: "12:50", type: "info", title: "⚠️ 重要：寄放行李", note: "弘大站 7號出口 RAON", desc: "或使用站內置物櫃。不要先去民宿，時間不夠！", icon: AlertCircle, location: "Hongik University Station Exit 7" },
         { id: 104, time: "13:10", type: "food", title: "弘大午餐", note: "商圈簡單用餐", icon: Utensils, location: "Hongdae Shopping Street" },
         { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "Hongdae Nanta Theatre" },
-        { id: 106, time: "15:30", type: "hotel", title: "Check-in", note: "回車站取行李 -> 民宿", icon: Moon, location: "Hongik University Station" },
-        { id: 107, time: "18:00", type: "food", title: "弘大/新村晚餐", note: "週六熱鬧街頭", desc: "晚餐後可逛街，欣賞街頭表演。", icon: Coffee, location: "Hongdae Shopping Street" },
+        { id: 106, time: "15:30", type: "hotel", title: "取行李 & Check-in", note: "前往民宿", icon: Moon, location: "Hongik University Station" },
+        { id: 107, time: "晚上", type: "sightseeing", title: "弘大/新村逛街", note: "晚餐 & 街頭表演", desc: "週六晚上非常熱鬧。", icon: ShoppingBag, location: "Hongdae Shopping Street" },
       ]
     },
     {
@@ -71,13 +70,13 @@ const TRIP_DATA = {
       weather: "sunny",
       items: [
         { id: 201, time: "09:00", type: "transport", title: "包車出發", note: "民宿門口集合", desc: "前往江華島一日遊。", icon: Car, location: "Hongdae" },
-        { id: 202, time: "10:30", type: "sightseeing", title: "江華島 Luge", note: "斜坡滑車", desc: "刺激好玩的斜坡滑車體驗。", icon: Users, location: "Ganghwa Seaside Resort Luge" },
-        { id: 203, time: "12:30", type: "food", title: "午餐：韓定食", note: "江華島特色料理", icon: Utensils, location: "Ganghwa-gun" },
+        { id: 202, time: "10:30", type: "sightseeing", title: "江華島 Luge", note: "斜坡滑車", desc: "刺激好玩！", icon: Users, location: "Ganghwa Seaside Resort Luge" },
+        { id: 203, time: "12:30", type: "food", title: "午餐：韓定食", note: "江華島特色", icon: Utensils, location: "Ganghwa-gun" },
         { id: 204, time: "13:30", type: "sightseeing", title: "小倉織物體驗館", note: "手帕蓋章 DIY", icon: Gift, location: "Sochang Experience Center" },
-        { id: 205, time: "14:30", type: "food", title: "朝陽紡織咖啡廳", note: "網美打卡點", desc: "廢棄紡織廠改建的超大美術館級咖啡廳。", icon: Coffee, location: "Joyang Bangjik" },
-        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "⚠️ 需帶護照", desc: "這裡有星巴克，可以眺望北韓景觀。", icon: MapPin, location: "Aegibong Peace Eco Park" },
+        { id: 205, time: "14:30", type: "food", title: "朝陽紡織咖啡廳", note: "網美打卡點", icon: Coffee, location: "Joyang Bangjik" },
+        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", desc: "眺望北韓景觀。", icon: MapPin, location: "Aegibong Peace Eco Park" },
         { id: 207, time: "19:00", type: "transport", title: "返回弘大/新村", note: "下車用餐", icon: Car, location: "Sinchon Station" },
-        { id: 208, time: "19:30", type: "food", title: "晚餐：暖身鍋物", note: "一隻雞 或 部隊鍋", desc: "消除一整天的疲勞。", icon: Utensils, location: "Sinchon" },
+        { id: 208, time: "19:30", type: "food", title: "晚餐：暖身鍋物", note: "一隻雞 或 部隊鍋", desc: "消除疲勞。", icon: Utensils, location: "Sinchon" },
       ]
     },
     {
@@ -86,11 +85,10 @@ const TRIP_DATA = {
       date: "12/23 (一)",
       weather: "snow",
       items: [
-        { id: 301, time: "07:30", type: "transport", title: "滑雪團集合", note: "KKday 行程 (弘大)", desc: "請依憑證上的集合時間為準 (通常 07:00-08:00)。", icon: Car, location: "Hongik University Station Exit 8" },
-        { id: 302, time: "10:00", type: "sightseeing", title: "芝山森林滑雪渡假村", note: "全天滑雪體驗", desc: "享受滑雪樂趣！", icon: Snowflake, location: "Jisan Forest Resort" },
+        { id: 301, time: "07:30", type: "transport", title: "滑雪團集合", note: "KKday 行程 (弘大)", desc: "約 07:00-08:00 集合，請依憑證為準。", icon: Car, location: "Hongik University Station Exit 8" },
+        { id: 302, time: "全天", type: "sightseeing", title: "芝山森林滑雪渡假村", note: "滑雪體驗", icon: Snowflake, location: "Jisan Forest Resort" },
         { id: 303, time: "17:30", type: "transport", title: "返回首爾", note: "約 18:00 抵達弘大", icon: Car, location: "Hongik University Station" },
-        { id: 304, time: "18:30", type: "food", title: "晚餐：韓國烤肉", note: "補充體力", desc: "滑雪消耗大，建議吃三層肉或韓牛。", icon: Utensils, location: "Hongdae BBQ Street" },
-        { id: 305, time: "20:30", type: "info", title: "早點休息", note: "養精蓄銳", icon: Moon, location: "Hongdae" },
+        { id: 304, time: "晚上", type: "food", title: "晚餐：韓國烤肉", note: "三層肉/韓牛", desc: "補充體力，早點休息。", icon: Utensils, location: "Hongdae BBQ Street" },
       ]
     },
     {
@@ -99,13 +97,13 @@ const TRIP_DATA = {
       date: "12/24 (二)",
       weather: "snow",
       items: [
-        { id: 401, time: "09:00", type: "transport", title: "前往三成站", note: "地鐵 2號線", desc: "弘大 ➔ 三成站 (Samseong)，直通 COEX Mall。", icon: Train, location: "Samseong Station" },
-        { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "欣賞發光書牆與聖誕裝置藝術，拍照打卡。", icon: Camera, location: "Starfield Library" },
-        { id: 403, time: "11:30", type: "food", title: "午餐：COEX Mall", note: "建議在此用餐", desc: "選擇多且環境好。先吃飽再進樂天世界戰鬥。", icon: Utensils, location: "COEX Mall" },
-        { id: 404, time: "12:30", type: "transport", title: "移動至蠶室", note: "地鐵 2號線", desc: "三成 ➔ 蠶室 (Jamsil)，約 6 分鐘。", icon: Train, location: "Jamsil Station" },
-        { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "下午入場。室內探險世界 + 室外魔幻島。可玩到晚上看遊行。", icon: Castle, location: "Lotte World" },
-        { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾 & 夜景", desc: "離開樂園後欣賞外圍燈飾與超大聖誕樹。", icon: Gift, location: "Seokchon Lake" },
-        { id: 407, time: "21:30", type: "transport", title: "返回弘大", note: "地鐵 2號線直達", icon: Train, location: "Hongik University Station" },
+        { id: 401, time: "09:00", type: "transport", title: "前往三成站", note: "地鐵 2號線", desc: "弘大 ➔ 三成站 (直通 COEX Mall)。", icon: Train, location: "Samseong Station" },
+        { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "發光書牆，拍照打卡。", icon: Camera, location: "Starfield Library" },
+        { id: 403, time: "11:30", type: "food", title: "午餐：COEX Mall", note: "建議在此用餐", desc: "選擇多環境好，吃飽再去樂園。", icon: Utensils, location: "COEX Mall" },
+        { id: 404, time: "12:30", type: "transport", title: "移動至蠶室", note: "地鐵 2號線", desc: "三成 ➔ 蠶室 (約6分鐘)。", icon: Train, location: "Jamsil Station" },
+        { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "玩到晚上看遊行煙火。", icon: Castle, location: "Lotte World" },
+        { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾夜景", icon: Gift, location: "Seokchon Lake" },
+        { id: 407, time: "21:30", type: "transport", title: "返回弘大", note: "地鐵 2號線", icon: Train, location: "Hongik University Station" },
       ]
     },
     {
@@ -116,11 +114,11 @@ const TRIP_DATA = {
       items: [
         { id: 501, time: "09:30", type: "transport", title: "前往光化門", note: "地鐵/公車", icon: Train, location: "Gwanghwamun Station" },
         { id: 502, time: "10:00", type: "sightseeing", title: "光化門", note: "守門將換崗儀式", icon: Users, location: "Gwanghwamun" },
-        { id: 503, time: "10:30", type: "sightseeing", title: "景福宮", note: "參觀古宮", desc: "感受朝鮮王朝氣息。", icon: Castle, location: "Gyeongbokgung Palace" },
-        { id: 504, time: "12:30", type: "food", title: "通仁市場 (午餐)", note: "銅錢便當", desc: "用古銅錢換購市場小吃。", icon: Utensils, location: "Tongin Market" },
-        { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "Seochon", desc: "韓屋咖啡廳巡禮、逛文創小店。", icon: Coffee, location: "Seochon" },
-        { id: 506, time: "17:00", type: "sightseeing", title: "漫步回光化門", note: "欣賞街景", icon: MapPin, location: "Gwanghwamun Square" },
-        { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "Seoul Lantern Festival", desc: "感受濃厚的聖誕氣氛。", icon: Gift, location: "Gwanghwamun Square" },
+        { id: 503, time: "10:30", type: "sightseeing", title: "景福宮", note: "參觀", icon: Castle, location: "Gyeongbokgung Palace" },
+        { id: 504, time: "12:30", type: "food", title: "通仁市場 (午餐)", note: "銅錢便當", icon: Utensils, location: "Tongin Market" },
+        { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "韓屋咖啡廳/文創", icon: Coffee, location: "Seochon" },
+        { id: 506, time: "17:00", type: "sightseeing", title: "漫步回光化門", note: "前往廣場", icon: MapPin, location: "Gwanghwamun Square" },
+        { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "Seoul Lantern Festival", desc: "感受聖誕氣氛。", icon: Gift, location: "Gwanghwamun Square" },
       ]
     },
     {
@@ -129,11 +127,11 @@ const TRIP_DATA = {
       date: "12/26 (四)",
       weather: "sunny",
       items: [
-        { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "文具控必逛，價格實惠。", icon: ShoppingBag, location: "Changsin-dong Stationery Toy Market" },
-        { id: 602, time: "12:30", type: "food", title: "廣藏市場 (午餐)", note: "必吃三寶", desc: "綠豆餅、生牛肉、麻藥飯捲。", icon: Utensils, location: "Gwangjang Market" },
-        { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞 或 弘大", desc: "選擇一處逛街採買。", icon: Users, location: "Seongsu-dong" },
-        { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 電子聖誕裝飾", desc: "觀賞建築物外牆的燈光秀。", icon: Camera, location: "Shinsegae Department Store Myeongdong" },
-        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川 / 東大門", note: "首爾燈節 & 晚餐", desc: "散步觀賞燈飾，晚餐可去東大門一隻雞胡同。", icon: Gift, location: "Cheonggyecheon Stream" },
+        { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "批發市場挖寶。", icon: ShoppingBag, location: "Changsin-dong Stationery Toy Market" },
+        { id: 602, time: "12:30", type: "food", title: "廣藏市場 (午餐)", note: "綠豆餅/生牛肉/麻藥飯捲", icon: Utensils, location: "Gwangjang Market" },
+        { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞 或 弘大", icon: Users, location: "Seongsu-dong" },
+        { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 聖誕裝飾", desc: "觀賞外牆燈光秀。", icon: Camera, location: "Shinsegae Department Store Myeongdong" },
+        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川 / 東大門", note: "首爾燈節 & 晚餐", desc: "一隻雞胡同晚餐。", icon: Gift, location: "Cheonggyecheon Stream" },
       ]
     },
     {
@@ -142,13 +140,13 @@ const TRIP_DATA = {
       date: "12/27 (五)",
       weather: "sunny",
       items: [
-        { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李", desc: "建議寄放在弘大站 (RAON 或 T-Luggage)，方便去機場。", icon: Moon, location: "Hongik University Station" },
-        { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "弘大搭地鐵6號線至望遠站 (1站)。\n必吃/買：炸雞丁、可樂餅、雨靴、乾貨泡菜。", icon: ShoppingBag, location: "Mangwon Market" },
-        { id: 703, time: "13:00", type: "food", title: "望遠洞咖啡廳", note: "悠閒午後", desc: "在市場周邊的文青咖啡廳休息。", icon: Coffee, location: "Mangwon-dong" },
-        { id: 704, time: "15:30", type: "transport", title: "取行李", note: "返回弘大入口站", icon: MapPin, location: "Hongik University Station" },
-        { id: 705, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週五傍晚易塞車，強烈建議搭快線/地鐵。\n約 17:15 抵達仁川機場。", icon: Train, location: "Incheon International Airport" },
-        { id: 706, time: "17:30", type: "transport", title: "機場報到", note: "辦理登機、退稅", icon: CheckCircle2, location: "Incheon International Airport" },
-        { id: 707, time: "19:45", type: "transport", title: "搭機返台", note: "長榮航空 BR159", desc: "21:40 抵達桃園機場 (TPE)。", icon: Plane, location: "Incheon International Airport" },
+        { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李 (弘大站)", desc: "建議寄放在弘大站 (RAON/T-Luggage)。", icon: Moon, location: "Hongik University Station" },
+        { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "必吃：炸雞丁、可樂餅。買伴手禮。", icon: ShoppingBag, location: "Mangwon Market" },
+        { id: 703, time: "13:00", type: "food", title: "望遠洞咖啡廳", note: "悠閒午後", icon: Coffee, location: "Mangwon-dong" },
+        { id: 704, time: "15:30", type: "transport", title: "取行李", note: "弘大站", icon: MapPin, location: "Hongik University Station" },
+        { id: 705, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週五易塞車，請搭地鐵/快線。", icon: Train, location: "Incheon International Airport" },
+        { id: 706, time: "17:15", type: "transport", title: "抵達機場", note: "登機/退稅", icon: CheckCircle2, location: "Incheon International Airport" },
+        { id: 707, time: "19:45", type: "transport", title: "搭機返台 (BR159)", note: "21:40 抵達桃園", icon: Plane, location: "Incheon International Airport" },
       ]
     }
   ]
