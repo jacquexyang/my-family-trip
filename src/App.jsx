@@ -19,7 +19,7 @@ const TRIP_DATA = {
   budget: 60000,
   coverImage: "https://images.unsplash.com/photo-1542044896530-05d85be9b11a?q=80&w=2000&auto=format&fit=crop", 
   participants: [
-    { id: 1, name: "我", avatar: "https://i.pravatar.cc/150?u=1" },
+    { id: 1, name: "Howard家", avatar: "https://i.pravatar.cc/150?u=1" },
     { id: 2, name: "楓家", avatar: "https://i.pravatar.cc/150?u=5" },
   ],
   packingList: [
@@ -60,7 +60,7 @@ const TRIP_DATA = {
         { id: 104, time: "13:10", type: "food", title: "弘大午餐", note: "商圈簡單用餐", icon: Utensils, location: "Hongdae Shopping Street" },
         { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "Hongdae Nanta Theatre" },
         { id: 106, time: "15:30", type: "hotel", title: "取行李 & Check-in", note: "前往民宿", icon: Moon, location: "Hongik University Station" },
-        { id: 107, time: "晚上", type: "sightseeing", title: "弘大/新村逛街", note: "晚餐 & 街頭表演", desc: "週六晚上非常熱鬧。", icon: ShoppingBag, location: "Hongdae Shopping Street" },
+        { id: 107, time: "18:00", type: "food", title: "弘大/新村晚餐", note: "週六熱鬧街頭", desc: "晚餐後可逛街，欣賞街頭表演。", icon: Coffee, location: "Hongdae Shopping Street" },
       ]
     },
     {
@@ -98,12 +98,12 @@ const TRIP_DATA = {
       weather: "snow",
       items: [
         { id: 401, time: "09:00", type: "transport", title: "前往三成站", note: "地鐵 2號線", desc: "弘大 ➔ 三成站 (直通 COEX Mall)。", icon: Train, location: "Samseong Station" },
-        { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "發光書牆，拍照打卡。", icon: Camera, location: "Starfield Library" },
+        { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "欣賞發光書牆與聖誕裝置藝術，拍照打卡。", icon: Camera, location: "Starfield Library" },
         { id: 403, time: "11:30", type: "food", title: "午餐：COEX Mall", note: "建議在此用餐", desc: "選擇多環境好，吃飽再去樂園。", icon: Utensils, location: "COEX Mall" },
         { id: 404, time: "12:30", type: "transport", title: "移動至蠶室", note: "地鐵 2號線", desc: "三成 ➔ 蠶室 (約6分鐘)。", icon: Train, location: "Jamsil Station" },
-        { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "玩到晚上看遊行煙火。", icon: Castle, location: "Lotte World" },
+        { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "下午入場。室內探險世界 + 室外魔幻島。可玩到晚上看遊行。", icon: Castle, location: "Lotte World" },
         { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾夜景", icon: Gift, location: "Seokchon Lake" },
-        { id: 407, time: "21:30", type: "transport", title: "返回弘大", note: "地鐵 2號線", icon: Train, location: "Hongik University Station" },
+        { id: 407, time: "21:30", type: "transport", title: "返回弘大", note: "地鐵 2號線直達", icon: Train, location: "Hongik University Station" },
       ]
     },
     {
@@ -296,6 +296,10 @@ const TripDashboard = ({ tripData }) => {
     setExpenses([...expenses, expense]);
     setNewExpense({ title: '', amount: '', payerId: 1 });
     setIsAddExpenseOpen(false);
+  };
+
+  const handleDeleteExpense = (id) => {
+    setExpenses(expenses.filter(exp => exp.id !== id));
   };
 
   const handleUpdateBudget = () => {
@@ -544,7 +548,15 @@ const TripDashboard = ({ tripData }) => {
                         <p className="text-xs text-stone-400">{exp.date} • {participants.find(p => p.id === exp.payerId)?.name} 付款</p>
                       </div>
                     </div>
-                    <span className="font-bold text-stone-900">${exp.amount.toLocaleString()}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-stone-900">${exp.amount.toLocaleString()}</span>
+                      <button 
+                        onClick={() => handleDeleteExpense(exp.id)}
+                        className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
