@@ -5,7 +5,7 @@ import {
   Wallet, ArrowRightLeft, Plus, X, ArrowRight, Umbrella, Car, Snowflake, 
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
   Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
-  AlertCircle
+  AlertCircle, Divide
 } from 'lucide-react';
 
 // --- 1. 資料庫區 (Data Layer) ---
@@ -173,7 +173,7 @@ const Tag = ({ type }) => {
   );
 };
 
-// 2.2 記帳邏輯 (支援分攤對象)
+// 2.2 記帳邏輯 (支援權重計算)
 const calculateDebts = (expenses, participants) => {
   const balances = {};
   participants.forEach(p => balances[p.id] = 0);
@@ -182,23 +182,25 @@ const calculateDebts = (expenses, participants) => {
     const payerId = exp.payerId;
     const amount = parseFloat(exp.amount);
     
-    // 找出分攤對象 (若無指定，預設為所有參與者)
+    // 找出分攤對象
     const beneficiaryIds = exp.beneficiaryIds && exp.beneficiaryIds.length > 0 
       ? exp.beneficiaryIds 
       : participants.map(p => p.id);
-      
-    const splitCount = beneficiaryIds.length;
     
-    if (splitCount > 0) {
-      const splitAmount = amount / splitCount;
-
+    // 取得權重設定 (若無則預設為 1)
+    const weights = exp.splitWeights || {};
+    const totalWeight = beneficiaryIds.reduce((sum, id) => sum + (parseFloat(weights[id]) || 1), 0);
+    
+    if (totalWeight > 0) {
       // 付款人先 + 總金額
       balances[payerId] += amount;
 
-      // 每個受益人 (包含付款人自己) 扣掉應付的份額
+      // 每個受益人 (包含付款人自己) 扣掉應付的份額 (按權重)
       beneficiaryIds.forEach(pId => {
         if (balances[pId] !== undefined) {
-          balances[pId] -= splitAmount;
+          const weight = parseFloat(weights[pId]) || 1;
+          const userShare = (amount * weight) / totalWeight;
+          balances[pId] -= userShare;
         }
       });
     }
@@ -208,7 +210,7 @@ const calculateDebts = (expenses, participants) => {
   
   Object.keys(balances).forEach(id => {
     const amount = balances[id];
-    // 避免浮點數誤差，使用小數點判斷
+    // 避免浮點數誤差
     if (amount < -1) debtors.push({ id: parseInt(id), amount });
     if (amount > 1) creditors.push({ id: parseInt(id), amount });
   });
@@ -272,7 +274,7 @@ const TripLoginModal = ({ trip, onUnlock }) => {
 
 // 2.4 主行程介面 (Single Trip Dashboard)
 const TripDashboard = ({ tripData }) => {
-  const [activeTab, setActiveTab] = useState('schedule'); // schedule, expenses, checklist
+  const [activeTab, setActiveTab] = useState('schedule');
   const [activeDay, setActiveDay] = useState(1);
   const [likedItems, setLikedItems] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
@@ -280,27 +282,30 @@ const TripDashboard = ({ tripData }) => {
   // State for features
   const [participants, setParticipants] = useState(tripData.participants);
   const [packingList, setPackingList] = useState(tripData.packingList || []);
-  const [expenses, setExpenses] = useState([{ id: 1, title: '預付公基金', amount: 3000, payerId: 1, beneficiaryIds: [1, 2], date: '出發前' }]);
+  const [expenses, setExpenses] = useState([{ id: 1, title: '預付公基金', amount: 3000, payerId: 1, beneficiaryIds: [1, 2], splitWeights: {1: 1, 2: 1}, date: '出發前' }]);
   const [budget, setBudget] = useState(tripData.budget || 50000);
   
   // UI State
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [newBudgetInput, setNewBudgetInput] = useState(budget);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  // 新增分攤對象狀態
-  const [newExpense, setNewExpense] = useState({ title: '', amount: '', payerId: 1, beneficiaryIds: [] });
+  // 新增分攤對象狀態 (包含權重)
+  const [newExpense, setNewExpense] = useState({ title: '', amount: '', payerId: 1, beneficiaryIds: [], splitWeights: {} });
   const [showShareModal, setShowShareModal] = useState(false);
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false);
   const [newPersonName, setNewPersonName] = useState('');
   const [newItemName, setNewItemName] = useState('');
 
-  // 確保天數資料存在
   const currentDayData = tripData.days?.find(d => d.day === activeDay) || tripData.days?.[0] || { items: [] };
 
   // 初始化 newExpense 的分攤對象為所有人
   useEffect(() => {
     if (isAddExpenseOpen) {
-        setNewExpense(prev => ({ ...prev, beneficiaryIds: participants.map(p => p.id) }));
+        setNewExpense(prev => ({ 
+            ...prev, 
+            beneficiaryIds: participants.map(p => p.id),
+            splitWeights: participants.reduce((acc, p) => ({ ...acc, [p.id]: 1 }), {})
+        }));
     }
   }, [isAddExpenseOpen, participants]);
 
@@ -320,7 +325,6 @@ const TripDashboard = ({ tripData }) => {
 
   const handleNavigation = (location, title) => {
     const query = location || title;
-    // 使用 Google Maps Web Search API，這在手機上會嘗試開啟 App，電腦上開網頁
     const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     window.open(url, '_blank');
   };
@@ -328,7 +332,6 @@ const TripDashboard = ({ tripData }) => {
   const handleAddExpense = () => {
     if (!newExpense.title || !newExpense.amount) return;
     
-    // 確保至少有一個分攤對象，如果全空則預設為所有人
     const finalBeneficiaries = newExpense.beneficiaryIds.length > 0 
         ? newExpense.beneficiaryIds 
         : participants.map(p => p.id);
@@ -339,10 +342,11 @@ const TripDashboard = ({ tripData }) => {
       amount: parseInt(newExpense.amount),
       payerId: parseInt(newExpense.payerId),
       beneficiaryIds: finalBeneficiaries,
+      splitWeights: newExpense.splitWeights,
       date: currentDayData.date?.split(' ')[0] || 'Today'
     };
     setExpenses([...expenses, expense]);
-    setNewExpense({ title: '', amount: '', payerId: 1, beneficiaryIds: [] });
+    setNewExpense({ title: '', amount: '', payerId: 1, beneficiaryIds: [], splitWeights: {} });
     setIsAddExpenseOpen(false);
   };
 
@@ -361,7 +365,7 @@ const TripDashboard = ({ tripData }) => {
     const newPerson = {
       id: newId,
       name: newPersonName,
-      avatar: `https://i.pravatar.cc/150?u=${newId + 10}` // Generate new avatar
+      avatar: `https://i.pravatar.cc/150?u=${newId + 10}`
     };
     setParticipants([...participants, newPerson]);
     setNewPersonName('');
@@ -372,7 +376,6 @@ const TripDashboard = ({ tripData }) => {
     setParticipants(participants.filter(p => p.id !== id));
   };
 
-  // Toggle beneficiary for new expense
   const toggleBeneficiary = (participantId) => {
       setNewExpense(prev => {
           const currentIds = prev.beneficiaryIds;
@@ -382,6 +385,17 @@ const TripDashboard = ({ tripData }) => {
               return { ...prev, beneficiaryIds: [...currentIds, participantId] };
           }
       });
+  };
+
+  // 修改權重
+  const handleWeightChange = (participantId, weight) => {
+      setNewExpense(prev => ({
+          ...prev,
+          splitWeights: {
+              ...prev.splitWeights,
+              [participantId]: weight
+          }
+      }));
   };
 
   const togglePackingItem = (categoryId, itemId) => {
@@ -406,6 +420,22 @@ const TripDashboard = ({ tripData }) => {
   const debts = useMemo(() => calculateDebts(expenses, participants), [expenses, participants]);
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
   const budgetPercentage = Math.min((totalSpent / budget) * 100, 100);
+
+  // 輔助函式：判斷是否為等比例分攤
+  const isEqualSplit = (exp) => {
+    const beneficiaries = exp.beneficiaryIds || [];
+    if (beneficiaries.length === 0) return true;
+    const weights = exp.splitWeights || {};
+    const firstWeight = parseFloat(weights[beneficiaries[0]]) || 1;
+    return beneficiaries.every(id => (parseFloat(weights[id]) || 1) === firstWeight);
+  };
+
+  // 輔助函式：取得比例字串
+  const getRatioString = (exp) => {
+      const beneficiaries = exp.beneficiaryIds || [];
+      const weights = exp.splitWeights || {};
+      return beneficiaries.map(id => parseFloat(weights[id]) || 1).join(':');
+  };
 
   return (
     <div className="w-full min-h-screen bg-[#FDFBF7] pb-24 md:pb-0">
@@ -612,8 +642,8 @@ const TripDashboard = ({ tripData }) => {
                            <span className="text-stone-300 mx-1">•</span>
                            <span>
                              {exp.beneficiaryIds && exp.beneficiaryIds.length === participants.length 
-                               ? "全員分攤" 
-                               : `由 ${exp.beneficiaryIds ? exp.beneficiaryIds.length : participants.length} 人分攤`}
+                               ? (isEqualSplit(exp) ? "全員分攤" : `全員分攤 (比例 ${getRatioString(exp)})`) 
+                               : `由 ${exp.beneficiaryIds ? exp.beneficiaryIds.length : participants.length} 人分攤 ${!isEqualSplit(exp) ? `(比例 ${getRatioString(exp)})` : ''}`}
                            </span>
                         </div>
                       </div>
@@ -709,18 +739,32 @@ const TripDashboard = ({ tripData }) => {
               {/* 分攤對象選擇 */}
               <div>
                 <p className="text-xs text-stone-400 mb-2 font-bold uppercase">分攤給誰?</p>
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                <div className="flex flex-col gap-2">
                     {participants.map(p => {
                         const isSelected = newExpense.beneficiaryIds.includes(p.id);
                         return (
-                            <button 
-                                key={p.id} 
-                                onClick={() => toggleBeneficiary(p.id)} 
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${isSelected ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-400 border-stone-100 opacity-60 hover:opacity-100'}`}
-                            >
-                                <img src={p.avatar} className={`w-5 h-5 rounded-full ${isSelected ? '' : 'grayscale opacity-50'}`} alt=""/> 
-                                <span className="text-xs font-bold">{p.name}</span>
-                            </button>
+                            <div key={p.id} className="flex items-center justify-between p-2 rounded-xl border border-stone-100 hover:bg-stone-50 transition-colors">
+                                <button 
+                                    onClick={() => toggleBeneficiary(p.id)} 
+                                    className={`flex items-center gap-3 flex-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}
+                                >
+                                    <img src={p.avatar} className="w-8 h-8 rounded-full" alt=""/> 
+                                    <span className="text-sm font-bold">{p.name}</span>
+                                </button>
+                                {isSelected && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-stone-400 font-bold">權重</span>
+                                        <input 
+                                            type="number" 
+                                            className="w-12 p-1 text-center bg-white border border-stone-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-stone-900"
+                                            value={newExpense.splitWeights?.[p.id] || 1}
+                                            onChange={(e) => handleWeightChange(p.id, e.target.value)}
+                                            step="0.5"
+                                            min="0"
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         );
                     })}
                 </div>
