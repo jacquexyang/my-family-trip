@@ -173,38 +173,71 @@ const Tag = ({ type }) => {
   );
 };
 
-// 2.2 記帳邏輯
+// 2.2 記帳邏輯 (支援分攤對象)
 const calculateDebts = (expenses, participants) => {
   const balances = {};
   participants.forEach(p => balances[p.id] = 0);
+
   expenses.forEach(exp => {
     const payerId = exp.payerId;
     const amount = parseFloat(exp.amount);
-    const splitCount = participants.length;
-    const splitAmount = amount / splitCount;
-    balances[payerId] += amount;
-    participants.forEach(p => { balances[p.id] -= splitAmount; });
+    
+    // 找出分攤對象 (若無指定，預設為所有參與者)
+    const beneficiaryIds = exp.beneficiaryIds && exp.beneficiaryIds.length > 0 
+      ? exp.beneficiaryIds 
+      : participants.map(p => p.id);
+      
+    const splitCount = beneficiaryIds.length;
+    
+    if (splitCount > 0) {
+      const splitAmount = amount / splitCount;
+
+      // 付款人先 + 總金額
+      balances[payerId] += amount;
+
+      // 每個受益人 (包含付款人自己) 扣掉應付的份額
+      beneficiaryIds.forEach(pId => {
+        if (balances[pId] !== undefined) {
+          balances[pId] -= splitAmount;
+        }
+      });
+    }
   });
+
   let debtors = [], creditors = [];
+  
   Object.keys(balances).forEach(id => {
     const amount = balances[id];
+    // 避免浮點數誤差，使用小數點判斷
     if (amount < -1) debtors.push({ id: parseInt(id), amount });
     if (amount > 1) creditors.push({ id: parseInt(id), amount });
   });
+
   const transactions = [];
   debtors.sort((a, b) => a.amount - b.amount);
   creditors.sort((a, b) => b.amount - a.amount);
+
   let i = 0, j = 0;
+
   while (i < debtors.length && j < creditors.length) {
     const debtor = debtors[i];
     const creditor = creditors[j];
+    
     const amount = Math.min(Math.abs(debtor.amount), creditor.amount);
-    transactions.push({ from: participants.find(p => p.id === debtor.id), to: participants.find(p => p.id === creditor.id), amount: Math.round(amount) });
+    
+    transactions.push({
+      from: participants.find(p => p.id === debtor.id),
+      to: participants.find(p => p.id === creditor.id),
+      amount: Math.round(amount)
+    });
+
     debtor.amount += amount;
     creditor.amount -= amount;
+
     if (Math.abs(debtor.amount) < 1) i++;
     if (creditor.amount < 1) j++;
   }
+
   return transactions;
 };
 
@@ -247,14 +280,15 @@ const TripDashboard = ({ tripData }) => {
   // State for features
   const [participants, setParticipants] = useState(tripData.participants);
   const [packingList, setPackingList] = useState(tripData.packingList || []);
-  const [expenses, setExpenses] = useState([{ id: 1, title: '預付公基金', amount: 3000, payerId: 1, date: '出發前' }]);
+  const [expenses, setExpenses] = useState([{ id: 1, title: '預付公基金', amount: 3000, payerId: 1, beneficiaryIds: [1, 2], date: '出發前' }]);
   const [budget, setBudget] = useState(tripData.budget || 50000);
   
   // UI State
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [newBudgetInput, setNewBudgetInput] = useState(budget);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  const [newExpense, setNewExpense] = useState({ title: '', amount: '', payerId: 1 });
+  // 新增分攤對象狀態
+  const [newExpense, setNewExpense] = useState({ title: '', amount: '', payerId: 1, beneficiaryIds: [] });
   const [showShareModal, setShowShareModal] = useState(false);
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false);
   const [newPersonName, setNewPersonName] = useState('');
@@ -262,6 +296,13 @@ const TripDashboard = ({ tripData }) => {
 
   // 確保天數資料存在
   const currentDayData = tripData.days?.find(d => d.day === activeDay) || tripData.days?.[0] || { items: [] };
+
+  // 初始化 newExpense 的分攤對象為所有人
+  useEffect(() => {
+    if (isAddExpenseOpen) {
+        setNewExpense(prev => ({ ...prev, beneficiaryIds: participants.map(p => p.id) }));
+    }
+  }, [isAddExpenseOpen, participants]);
 
   const handleShare = () => {
     const url = window.location.href;
@@ -286,15 +327,22 @@ const TripDashboard = ({ tripData }) => {
 
   const handleAddExpense = () => {
     if (!newExpense.title || !newExpense.amount) return;
+    
+    // 確保至少有一個分攤對象，如果全空則預設為所有人
+    const finalBeneficiaries = newExpense.beneficiaryIds.length > 0 
+        ? newExpense.beneficiaryIds 
+        : participants.map(p => p.id);
+
     const expense = {
       id: Date.now(),
       title: newExpense.title,
       amount: parseInt(newExpense.amount),
       payerId: parseInt(newExpense.payerId),
+      beneficiaryIds: finalBeneficiaries,
       date: currentDayData.date?.split(' ')[0] || 'Today'
     };
     setExpenses([...expenses, expense]);
-    setNewExpense({ title: '', amount: '', payerId: 1 });
+    setNewExpense({ title: '', amount: '', payerId: 1, beneficiaryIds: [] });
     setIsAddExpenseOpen(false);
   };
 
@@ -321,8 +369,19 @@ const TripDashboard = ({ tripData }) => {
   };
 
   const handleRemovePerson = (id) => {
-    // 簡單的刪除邏輯，實際應用可能要考慮是否有人已經有記帳紀錄
     setParticipants(participants.filter(p => p.id !== id));
+  };
+
+  // Toggle beneficiary for new expense
+  const toggleBeneficiary = (participantId) => {
+      setNewExpense(prev => {
+          const currentIds = prev.beneficiaryIds;
+          if (currentIds.includes(participantId)) {
+              return { ...prev, beneficiaryIds: currentIds.filter(id => id !== participantId) };
+          } else {
+              return { ...prev, beneficiaryIds: [...currentIds, participantId] };
+          }
+      });
   };
 
   const togglePackingItem = (categoryId, itemId) => {
@@ -545,7 +604,18 @@ const TripDashboard = ({ tripData }) => {
                       <div className="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center text-stone-500"><Wallet size={18}/></div>
                       <div>
                         <p className="font-bold text-stone-800">{exp.title}</p>
-                        <p className="text-xs text-stone-400">{exp.date} • {participants.find(p => p.id === exp.payerId)?.name} 付款</p>
+                        <div className="flex items-center gap-1 text-xs text-stone-400">
+                           <span>{exp.date}</span>
+                           <span className="text-stone-300 mx-1">•</span>
+                           <span>{participants.find(p => p.id === exp.payerId)?.name} 付款</span>
+                           {/* 顯示分攤資訊 */}
+                           <span className="text-stone-300 mx-1">•</span>
+                           <span>
+                             {exp.beneficiaryIds && exp.beneficiaryIds.length === participants.length 
+                               ? "全員分攤" 
+                               : `由 ${exp.beneficiaryIds ? exp.beneficiaryIds.length : participants.length} 人分攤`}
+                           </span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -629,10 +699,33 @@ const TripDashboard = ({ tripData }) => {
             <div className="space-y-4">
               <input type="text" placeholder="項目名稱 (如: 晚餐)" className="w-full p-4 bg-stone-50 rounded-xl border border-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-900" value={newExpense.title} onChange={e => setNewExpense({...newExpense, title: e.target.value})} autoFocus />
               <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400">$</span><input type="number" placeholder="0" className="w-full p-4 pl-8 bg-stone-50 rounded-xl border border-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-900 font-bold text-lg" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})} /></div>
+              
+              {/* 付款人選擇 */}
               <div>
-                <p className="text-xs text-stone-400 mb-2 font-bold uppercase">誰付款?</p>
-                <div className="flex gap-2 overflow-x-auto pb-2">{participants.map(p => (<button key={p.id} onClick={() => setNewExpense({...newExpense, payerId: p.id})} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${newExpense.payerId === p.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'}`}><img src={p.avatar} className="w-5 h-5 rounded-full" alt=""/> <span className="text-xs font-bold">{p.name}</span></button>))}</div>
+                <p className="text-xs text-stone-400 mb-2 font-bold uppercase">誰先付錢?</p>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">{participants.map(p => (<button key={p.id} onClick={() => setNewExpense({...newExpense, payerId: p.id})} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${newExpense.payerId === p.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'}`}><img src={p.avatar} className="w-5 h-5 rounded-full" alt=""/> <span className="text-xs font-bold">{p.name}</span></button>))}</div>
               </div>
+
+              {/* 分攤對象選擇 */}
+              <div>
+                <p className="text-xs text-stone-400 mb-2 font-bold uppercase">分攤給誰?</p>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                    {participants.map(p => {
+                        const isSelected = newExpense.beneficiaryIds.includes(p.id);
+                        return (
+                            <button 
+                                key={p.id} 
+                                onClick={() => toggleBeneficiary(p.id)} 
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${isSelected ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-400 border-stone-100 opacity-60 hover:opacity-100'}`}
+                            >
+                                <img src={p.avatar} className={`w-5 h-5 rounded-full ${isSelected ? '' : 'grayscale opacity-50'}`} alt=""/> 
+                                <span className="text-xs font-bold">{p.name}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+              </div>
+
               <button onClick={handleAddExpense} className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold text-lg hover:bg-stone-800 transition-colors shadow-lg">確認新增</button>
             </div>
           </div>
