@@ -5,17 +5,17 @@ import {
   Wallet, ArrowRightLeft, Plus, X, ArrowRight, Umbrella, Car, Snowflake, 
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
   Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
-  AlertCircle, Divide
+  AlertCircle
 } from 'lucide-react';
 
 // --- 1. 資料庫區 (Data Layer) ---
 
 const TRIP_DATA = {
-  id: 'seoul_2024',
-  password: "2024", // 設定密碼，若留空 "" 則直接進入
+  id: 'seoul_2025', // 更新 ID 為 2025
+  password: "2025", // 配合年份更新預設密碼，若留空 "" 則直接進入
   title: "冬日首爾聖誕之旅 🎄",
   subtitle: "滑雪、美食與聖誕燈飾的浪漫行",
-  dates: "2024.12.21 - 2024.12.27",
+  dates: "2025.12.21 - 2025.12.27", // 更新為 2025 年
   budget: 60000,
   coverImage: "https://images.unsplash.com/photo-1542044896530-05d85be9b11a?q=80&w=2000&auto=format&fit=crop", 
   participants: [
@@ -51,7 +51,7 @@ const TRIP_DATA = {
     {
       day: 1,
       label: "Day 1",
-      date: "12/21 (六)",
+      date: "12/21 (日)", // 更新為週日
       weather: "snow",
       items: [
         { id: 101, time: "07:05", type: "transport", title: "桃園機場起飛", note: "長榮航空 BR170", desc: "預計 10:30 抵達仁川機場 (ICN)。", icon: Plane, location: "Taoyuan International Airport" },
@@ -60,13 +60,13 @@ const TRIP_DATA = {
         { id: 104, time: "13:10", type: "food", title: "弘大午餐", note: "商圈簡單用餐", icon: Utensils, location: "Hongdae Shopping Street" },
         { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "Hongdae Nanta Theatre" },
         { id: 106, time: "15:30", type: "hotel", title: "取行李 & Check-in", note: "前往民宿", icon: Moon, location: "Hongik University Station" },
-        { id: 107, time: "18:00", type: "food", title: "弘大/新村晚餐", note: "週六熱鬧街頭", desc: "晚餐後可逛街，欣賞街頭表演。", icon: Coffee, location: "Hongdae Shopping Street" },
+        { id: 107, time: "18:00", type: "food", title: "弘大/新村晚餐", note: "週日熱鬧街頭", desc: "晚餐後可逛街，欣賞街頭表演。", icon: Coffee, location: "Hongdae Shopping Street" },
       ]
     },
     {
       day: 2,
       label: "Day 2",
-      date: "12/22 (日)",
+      date: "12/22 (一)", // 更新為週一
       weather: "sunny",
       items: [
         { id: 201, time: "09:00", type: "transport", title: "包車出發", note: "民宿門口集合", desc: "前往江華島一日遊。", icon: Car, location: "Hongdae" },
@@ -82,7 +82,7 @@ const TRIP_DATA = {
     {
       day: 3,
       label: "Day 3",
-      date: "12/23 (一)",
+      date: "12/23 (二)", // 更新為週二
       weather: "snow",
       items: [
         { id: 301, time: "07:30", type: "transport", title: "滑雪團集合", note: "KKday 行程 (弘大)", desc: "約 07:00-08:00 集合，請依憑證為準。", icon: Car, location: "Hongik University Station Exit 8" },
@@ -94,7 +94,7 @@ const TRIP_DATA = {
     {
       day: 4,
       label: "Day 4",
-      date: "12/24 (二)",
+      date: "12/24 (三)", // 更新為週三
       weather: "snow",
       items: [
         { id: 401, time: "09:00", type: "transport", title: "前往三成站", note: "地鐵 2號線", desc: "弘大 ➔ 三成站 (直通 COEX Mall)。", icon: Train, location: "Samseong Station" },
@@ -109,7 +109,7 @@ const TRIP_DATA = {
     {
       day: 5, 
       label: "Day 5",
-      date: "12/25 (三)",
+      date: "12/25 (四)", // 更新為週四
       weather: "snow",
       items: [
         { id: 501, time: "09:30", type: "transport", title: "前往光化門", note: "地鐵/公車", icon: Train, location: "Gwanghwamun Station" },
@@ -124,7 +124,7 @@ const TRIP_DATA = {
     {
       day: 6,
       label: "Day 6",
-      date: "12/26 (四)",
+      date: "12/26 (五)", // 更新為週五
       weather: "sunny",
       items: [
         { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "批發市場挖寶。", icon: ShoppingBag, location: "Changsin-dong Stationery Toy Market" },
@@ -137,14 +137,14 @@ const TRIP_DATA = {
     {
       day: 7,
       label: "Day 7",
-      date: "12/27 (五)",
+      date: "12/27 (六)", // 更新為週六
       weather: "sunny",
       items: [
         { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李 (弘大站)", desc: "建議寄放在弘大站 (RAON/T-Luggage)。", icon: Moon, location: "Hongik University Station" },
         { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "必吃：炸雞丁、可樂餅。買伴手禮。", icon: ShoppingBag, location: "Mangwon Market" },
         { id: 703, time: "13:00", type: "food", title: "望遠洞咖啡廳", note: "悠閒午後", icon: Coffee, location: "Mangwon-dong" },
         { id: 704, time: "15:30", type: "transport", title: "取行李", note: "弘大站", icon: MapPin, location: "Hongik University Station" },
-        { id: 705, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週五易塞車，請搭地鐵/快線。", icon: Train, location: "Incheon International Airport" },
+        { id: 705, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週六傍晚易塞車，請搭地鐵/快線。", icon: Train, location: "Incheon International Airport" },
         { id: 706, time: "17:15", type: "transport", title: "抵達機場", note: "登機/退稅", icon: CheckCircle2, location: "Incheon International Airport" },
         { id: 707, time: "19:45", type: "transport", title: "搭機返台 (BR159)", note: "21:40 抵達桃園", icon: Plane, location: "Incheon International Airport" },
       ]
@@ -274,7 +274,7 @@ const TripLoginModal = ({ trip, onUnlock }) => {
 
 // 2.4 主行程介面 (Single Trip Dashboard)
 const TripDashboard = ({ tripData }) => {
-  const [activeTab, setActiveTab] = useState('schedule');
+  const [activeTab, setActiveTab] = useState('schedule'); // schedule, expenses, checklist
   const [activeDay, setActiveDay] = useState(1);
   const [likedItems, setLikedItems] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
@@ -296,6 +296,7 @@ const TripDashboard = ({ tripData }) => {
   const [newPersonName, setNewPersonName] = useState('');
   const [newItemName, setNewItemName] = useState('');
 
+  // 確保天數資料存在
   const currentDayData = tripData.days?.find(d => d.day === activeDay) || tripData.days?.[0] || { items: [] };
 
   // 初始化 newExpense 的分攤對象為所有人
@@ -325,6 +326,7 @@ const TripDashboard = ({ tripData }) => {
 
   const handleNavigation = (location, title) => {
     const query = location || title;
+    // 使用 Google Maps Web Search API，這在手機上會嘗試開啟 App，電腦上開網頁
     const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     window.open(url, '_blank');
   };
