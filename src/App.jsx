@@ -12,7 +12,7 @@ import {
 
 const TRIP_DATA = {
   id: 'seoul_2025', 
-  password: "2024", 
+  password: "2024", // 設定密碼，若留空 "" 則直接進入
   title: "冬日首爾聖誕之旅 🎄",
   subtitle: "滑雪、美食與聖誕燈飾的浪漫行",
   dates: "2025.12.21 - 2025.12.27", 
@@ -173,7 +173,7 @@ const Tag = ({ type }) => {
   );
 };
 
-// 2.2 記帳邏輯
+// 2.2 記帳邏輯 (支援權重計算)
 const calculateDebts = (expenses, participants) => {
   const balances = {};
   participants.forEach(p => balances[p.id] = 0);
@@ -182,15 +182,20 @@ const calculateDebts = (expenses, participants) => {
     const payerId = exp.payerId;
     const amount = parseFloat(exp.amount);
     
+    // 找出分攤對象
     const beneficiaryIds = exp.beneficiaryIds && exp.beneficiaryIds.length > 0 
       ? exp.beneficiaryIds 
       : participants.map(p => p.id);
     
+    // 取得權重設定 (若無則預設為 1)
     const weights = exp.splitWeights || {};
     const totalWeight = beneficiaryIds.reduce((sum, id) => sum + (parseFloat(weights[id]) || 1), 0);
     
     if (totalWeight > 0) {
+      // 付款人先 + 總金額
       balances[payerId] += amount;
+
+      // 每個受益人 (包含付款人自己) 扣掉應付的份額 (按權重)
       beneficiaryIds.forEach(pId => {
         if (balances[pId] !== undefined) {
           const weight = parseFloat(weights[pId]) || 1;
@@ -202,8 +207,10 @@ const calculateDebts = (expenses, participants) => {
   });
 
   let debtors = [], creditors = [];
+  
   Object.keys(balances).forEach(id => {
     const amount = balances[id];
+    // 避免浮點數誤差
     if (amount < -1) debtors.push({ id: parseInt(id), amount });
     if (amount > 1) creditors.push({ id: parseInt(id), amount });
   });
@@ -213,16 +220,26 @@ const calculateDebts = (expenses, participants) => {
   creditors.sort((a, b) => b.amount - a.amount);
 
   let i = 0, j = 0;
+
   while (i < debtors.length && j < creditors.length) {
     const debtor = debtors[i];
     const creditor = creditors[j];
+    
     const amount = Math.min(Math.abs(debtor.amount), creditor.amount);
-    transactions.push({ from: participants.find(p => p.id === debtor.id), to: participants.find(p => p.id === creditor.id), amount: Math.round(amount) });
+    
+    transactions.push({
+      from: participants.find(p => p.id === debtor.id),
+      to: participants.find(p => p.id === creditor.id),
+      amount: Math.round(amount)
+    });
+
     debtor.amount += amount;
     creditor.amount -= amount;
+
     if (Math.abs(debtor.amount) < 1) i++;
     if (creditor.amount < 1) j++;
   }
+
   return transactions;
 };
 
@@ -230,19 +247,23 @@ const calculateDebts = (expenses, participants) => {
 const TripLoginModal = ({ trip, onUnlock }) => {
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input === trip.password) onUnlock();
     else { setError(true); setTimeout(() => setError(false), 2000); }
   };
+
   return (
     <div className="fixed inset-0 z-[60] bg-stone-900/40 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl relative text-center border border-white/20">
-        <div className="flex justify-center mb-6"><div className="bg-stone-100 p-4 rounded-2xl text-stone-700 shadow-inner"><Lock size={32} /></div></div>
+      <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl scale-100 animate-in zoom-in-95 duration-300 relative text-center border border-white/20">
+        <div className="flex justify-center mb-6">
+          <div className="bg-stone-100 p-4 rounded-2xl text-stone-700 shadow-inner"><Lock size={32} /></div>
+        </div>
         <h3 className="text-xl font-bold text-stone-800 mb-2">行程已鎖定</h3>
         <p className="text-sm text-stone-500 mb-6">請輸入「{trip.title}」的通關密語</p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Passcode" className="w-full bg-stone-50 border-2 border-stone-100 rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest text-stone-800 focus:outline-none focus:border-stone-800 focus:bg-white" autoFocus />
+          <input type="text" inputMode="numeric" pattern="[0-9]*" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Passcode" className="w-full bg-stone-50 border-2 border-stone-100 rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest text-stone-800 focus:outline-none focus:border-stone-800 focus:bg-white transition-all" autoFocus />
           <button type="submit" className="w-full bg-stone-900 text-white rounded-xl py-3 font-bold text-lg hover:bg-stone-800 transition-all shadow-lg active:scale-95">解鎖</button>
         </form>
         {error && <p className="mt-4 text-red-500 text-sm font-bold animate-pulse flex justify-center gap-1"><X size={16} /> 密碼錯誤</p>}
@@ -251,12 +272,13 @@ const TripLoginModal = ({ trip, onUnlock }) => {
   );
 };
 
-// 2.4 新增：餐點詳情頁 (Food Detail Modal)
+// 2.4 新增：餐點詳情頁 (Food Detail Modal) - Redesigned
 const FoodDetailModal = ({ item, onClose }) => {
   if (!item) return null;
 
   const handleAskGemini = () => {
-    const query = `首爾 ${item.location || '弘大'} ${item.title} 評價 與 推薦菜色`;
+    // 建立更具體的查詢 Prompt
+    const query = `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
     const url = `https://gemini.google.com/app?q=${encodeURIComponent(query)}`;
     window.open(url, '_blank');
   };
@@ -270,73 +292,108 @@ const FoodDetailModal = ({ item, onClose }) => {
     <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl relative h-[85vh] md:h-auto md:max-h-[85vh] flex flex-col">
         {/* Header Image Area */}
-        <div className="h-48 bg-stone-200 relative shrink-0">
+        <div className="h-56 bg-stone-200 relative shrink-0">
           <img 
             src={`https://source.unsplash.com/800x600/?korean,food,${item.title}`} 
             onError={(e) => e.target.src = "https://images.unsplash.com/photo-1580651315530-69c8e0026377?q=80&w=2070&auto=format&fit=crop"}
             alt={item.title} 
             className="w-full h-full object-cover"
           />
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/30 hover:bg-black/50 backdrop-blur-md rounded-full text-white transition-colors">
+          
+          <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors border border-white/20">
             <X size={20} />
           </button>
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-            <h2 className="text-2xl font-bold text-white mb-1">{item.title}</h2>
-            <p className="text-white/80 text-sm flex items-center gap-1"><MapPin size={14}/> {item.location || '首爾'}</p>
+          
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
+             <div className="flex gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded-md bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider">Food</span>
+                <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1">
+                   <Star size={10} className="fill-current"/> 4.5 (模擬)
+                </span>
+             </div>
+            <h2 className="text-3xl font-bold text-white mb-1 shadow-sm">{item.title}</h2>
+            <p className="text-white/80 text-sm flex items-center gap-1 font-medium"><MapPin size={14}/> {item.location || '首爾'}</p>
           </div>
         </div>
 
         {/* Content Scroll Area */}
-        <div className="p-6 overflow-y-auto flex-1">
-          {/* Gemini AI Card */}
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-5 rounded-2xl border border-indigo-100 mb-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-3 opacity-10 text-indigo-600"><Sparkles size={80}/></div>
-            <div className="flex items-center gap-2 mb-3 text-indigo-700 font-bold">
-              <Sparkles size={18} />
-              <span>Gemini 探店助手</span>
+        <div className="p-6 overflow-y-auto flex-1 bg-stone-50">
+          
+          {/* Quick Actions (Stickyish) */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <button onClick={handleGoogleMap} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-blue-200 hover:text-blue-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
+              <MapPin size={18} className="text-blue-500"/> Google 導航
+            </button>
+            <button onClick={() => window.open(`https://www.instagram.com/explore/tags/${item.title}/`, '_blank')} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-pink-200 hover:text-pink-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
+              <Camera size={18} className="text-pink-500"/> IG 美食照
+            </button>
+          </div>
+
+          {/* Gemini AI Card (Redesigned) */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-100 relative overflow-hidden mb-6 group">
+            <div className="absolute top-0 right-0 p-0 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Sparkles size={120} className="text-indigo-600 -mr-4 -mt-4"/>
             </div>
             
-            <div className="space-y-3 text-sm text-stone-700">
-              <div className="flex gap-2">
-                <span className="shrink-0 font-bold text-indigo-600">必吃：</span>
-                <span>{item.desc || '招牌菜、人氣熱銷餐點'}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="shrink-0 font-bold text-indigo-600">預算：</span>
-                <span>約 ₩15,000 - ₩30,000 / 人 (預估)</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="shrink-0 font-bold text-indigo-600">提醒：</span>
-                <span>用餐尖峰時段可能需要排隊，建議避開 12:00-13:00 或 18:30-19:30。</span>
-              </div>
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-indigo-700 font-bold">
+                    <div className="p-1.5 bg-indigo-100 rounded-lg"><Sparkles size={16} /></div>
+                    <span>AI 探店助手</span>
+                </div>
+                <span className="text-[10px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded-full">Gemini Powered</span>
+            </div>
+            
+            <div className="space-y-4">
+               {/* 模擬的結構化資料 */}
+               <div className="flex gap-3 items-start">
+                   <div className="mt-0.5 p-1 bg-orange-100 rounded text-orange-600 shrink-0"><ThumbsUp size={14}/></div>
+                   <div>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">必吃推薦</span>
+                       <p className="text-sm text-stone-700 font-medium leading-relaxed">{item.desc || '尚未載入推薦菜色，請點擊下方按鈕詢問 AI。'}</p>
+                   </div>
+               </div>
+
+               <div className="flex gap-3 items-start">
+                   <div className="mt-0.5 p-1 bg-green-100 rounded text-green-600 shrink-0"><Wallet size={14}/></div>
+                   <div>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">人均預算</span>
+                       <p className="text-sm text-stone-700 font-medium">約 ₩15,000 - ₩30,000 (預估)</p>
+                   </div>
+               </div>
+
+               <div className="flex gap-3 items-start">
+                   <div className="mt-0.5 p-1 bg-red-100 rounded text-red-600 shrink-0"><AlertTriangle size={14}/></div>
+                   <div>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">避雷 / 貼心提醒</span>
+                       <p className="text-sm text-stone-700 font-medium">用餐尖峰時段可能需要排隊。建議先確認是否可預約。</p>
+                   </div>
+               </div>
             </div>
 
-            <button 
-              onClick={handleAskGemini}
-              className="mt-4 w-full py-2.5 bg-white border border-indigo-200 text-indigo-600 rounded-xl text-sm font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
-            >
-              <Sparkles size={16} /> 詢問 Gemini 詳細評價
-            </button>
+            <div className="mt-6 pt-4 border-t border-indigo-50">
+                <button 
+                onClick={handleAskGemini}
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                >
+                <MessageCircle size={16} /> 詢問 Gemini 詳細評價
+                </button>
+                <p className="text-[10px] text-center text-stone-300 mt-2">點擊將開啟 Google Gemini 進行即時分析</p>
+            </div>
           </div>
 
-          <h3 className="font-bold text-stone-800 mb-3 flex items-center gap-2"><ExternalLink size={18}/> 外部連結</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={handleGoogleMap} className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-600 hover:bg-stone-100 flex items-center justify-center gap-2 font-medium transition-colors">
-              <MapPin size={18} className="text-red-500"/> Google Map
-            </button>
-            <button onClick={() => window.open(`https://www.instagram.com/explore/tags/${item.title}/`, '_blank')} className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-600 hover:bg-stone-100 flex items-center justify-center gap-2 font-medium transition-colors">
-              <Camera size={18} className="text-pink-500"/> Instagram
-            </button>
-            {item.link && (
-               <button onClick={() => window.open(item.link, '_blank')} className="col-span-2 p-3 rounded-xl bg-stone-800 text-white hover:bg-stone-700 flex items-center justify-center gap-2 font-medium transition-colors">
-                 <Globe size={18}/> 查看部落格/介紹連結
-               </button>
-            )}
+          {/* Location Preview (Static Map Placeholder) */}
+          <div className="rounded-3xl overflow-hidden border border-stone-200 h-40 relative group cursor-pointer" onClick={handleGoogleMap}>
+             <img src="https://maps.googleapis.com/maps/api/staticmap?center=Seoul&zoom=13&size=600x300&maptype=roadmap&sensor=false&key=YOUR_API_KEY_HERE" 
+                  onError={(e) => e.target.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Seoul_Montage.png/1200px-Seoul_Montage.png"} // Fallback image
+                  alt="Map Preview" 
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+             <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/0 transition-colors">
+                <button className="px-4 py-2 bg-white/90 backdrop-blur rounded-full text-xs font-bold shadow-sm flex items-center gap-1 group-hover:scale-110 transition-transform">
+                    <MapPin size={14}/> 查看地圖
+                </button>
+             </div>
           </div>
 
-          <div className="mt-8 text-xs text-stone-400 text-center">
-            * AI 資訊僅供參考，實際情況請依現場為準
-          </div>
         </div>
       </div>
     </div>
@@ -625,6 +682,7 @@ const TripDashboard = ({ tripData }) => {
             </div>
           )}
 
+          {/* TAB: 記帳 Expenses */}
           {activeTab === 'expenses' && (
             <div className="p-6 md:p-10 space-y-8">
               <div className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
@@ -635,12 +693,14 @@ const TripDashboard = ({ tripData }) => {
                   <span className="text-stone-500 text-lg">/ {budget.toLocaleString()}</span>
                   <button onClick={() => setIsEditingBudget(!isEditingBudget)} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><Edit3 size={14}/></button>
                 </div>
+                
                 {isEditingBudget && (
                   <div className="mb-4 flex gap-2 animate-in fade-in slide-in-from-top-2">
                     <input type="number" value={newBudgetInput} onChange={(e) => setNewBudgetInput(e.target.value)} className="bg-white/10 border border-white/20 rounded-lg px-3 py-1 text-sm text-white focus:outline-none w-32" />
                     <button onClick={() => { setBudget(parseInt(newBudgetInput)); setIsEditingBudget(false); }} className="bg-green-500 px-3 py-1 rounded-lg text-xs font-bold hover:bg-green-600">儲存</button>
                   </div>
                 )}
+
                 <div className="relative w-full h-3 bg-white/10 rounded-full overflow-hidden mb-2">
                   <div className={`absolute left-0 top-0 bottom-0 transition-all duration-1000 ${budgetPercentage > 90 ? 'bg-red-500' : 'bg-emerald-400'}`} style={{ width: `${budgetPercentage}%` }}></div>
                 </div>
@@ -650,10 +710,12 @@ const TripDashboard = ({ tripData }) => {
                 </div>
               </div>
 
+              {/* Add Button */}
               <button onClick={() => setIsAddExpenseOpen(true)} className="w-full py-4 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-colors flex items-center justify-center gap-2 border border-stone-200 border-dashed">
                 <PlusCircle size={20}/> 新增一筆消費
               </button>
 
+              {/* Settlement Section */}
               <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
                 <h3 className="font-bold text-stone-800 mb-4 flex items-center gap-2"><ArrowRightLeft size={18} /> 智慧結算</h3>
                 {debts.length === 0 ? <p className="text-stone-400 text-sm text-center py-4">目前沒有款項需結算</p> : (
@@ -670,6 +732,7 @@ const TripDashboard = ({ tripData }) => {
                 )}
               </div>
 
+              {/* History */}
               <div className="space-y-4">
                 <h3 className="font-bold text-stone-800 text-lg">消費紀錄</h3>
                 {expenses.map((exp) => (
@@ -701,6 +764,7 @@ const TripDashboard = ({ tripData }) => {
             </div>
           )}
 
+          {/* TAB: 行前清單 Checklist */}
           {activeTab === 'checklist' && (
              <div className="p-6 md:p-10 space-y-8 min-h-[60vh]">
                <div className="flex justify-between items-end mb-4">
@@ -709,18 +773,33 @@ const TripDashboard = ({ tripData }) => {
                    <p className="text-stone-400 text-sm mt-1">Checklist before you go</p>
                  </div>
                </div>
+
                {packingList.map((category, catIdx) => (
                  <div key={catIdx} className="bg-stone-50 rounded-2xl p-5 border border-stone-100">
-                   <h3 className="font-bold text-stone-700 mb-4 flex items-center gap-2"><div className="w-2 h-2 bg-stone-400 rounded-full"></div> {category.category}</h3>
+                   <h3 className="font-bold text-stone-700 mb-4 flex items-center gap-2">
+                     <div className="w-2 h-2 bg-stone-400 rounded-full"></div> {category.category}
+                   </h3>
                    <div className="space-y-3">
                      {category.items.map((item) => (
                        <div key={item.id} className="flex items-center gap-3 group cursor-pointer" onClick={() => togglePackingItem(category.category, item.id)}>
-                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-stone-800 border-stone-800' : 'border-stone-300 bg-white'}`}>{item.checked && <CheckCircle2 size={14} className="text-white" />}</div>
+                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-stone-800 border-stone-800' : 'border-stone-300 bg-white'}`}>
+                           {item.checked && <CheckCircle2 size={14} className="text-white" />}
+                         </div>
                          <span className={`text-sm transition-all ${item.checked ? 'text-stone-400 line-through' : 'text-stone-700'}`}>{item.name}</span>
                        </div>
                      ))}
+                     {/* Add Item Input (Simple) */}
                      <div className="flex gap-2 mt-4 pt-2 border-t border-stone-200/50">
-                        <input type="text" placeholder="新增項目..." className="flex-1 bg-transparent text-sm focus:outline-none" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') handleAddPackingItem(catIdx); }} />
+                        <input 
+                          type="text" 
+                          placeholder="新增項目..." 
+                          className="flex-1 bg-transparent text-sm focus:outline-none"
+                          value={newItemName}
+                          onChange={(e) => setNewItemName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if(e.key === 'Enter') handleAddPackingItem(catIdx);
+                          }}
+                        />
                         <button onClick={() => handleAddPackingItem(catIdx)} className="text-stone-400 hover:text-stone-800"><PlusCircle size={16}/></button>
                      </div>
                    </div>
@@ -728,9 +807,11 @@ const TripDashboard = ({ tripData }) => {
                ))}
              </div>
           )}
+
         </div>
       </div>
 
+      {/* Mobile Bottom Nav (Fixed) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-3 pb-safe z-50 flex justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <button onClick={() => setActiveTab('schedule')} className={`flex flex-col items-center transition-colors ${activeTab === 'schedule' ? 'text-stone-900' : 'text-stone-400'}`}><Calendar size={24}/><span className="text-[10px] mt-1 font-medium">行程</span></button>
         <button onClick={() => { if(activeTab === 'expenses') setIsAddExpenseOpen(true); else setActiveTab('expenses'); }} className={`flex flex-col items-center transition-colors ${activeTab === 'expenses' ? 'text-stone-900' : 'text-stone-400'}`}>
@@ -740,6 +821,7 @@ const TripDashboard = ({ tripData }) => {
         <button onClick={() => setActiveTab('checklist')} className={`flex flex-col items-center transition-colors ${activeTab === 'checklist' ? 'text-stone-900' : 'text-stone-400'}`}><CheckSquare size={24}/><span className="text-[10px] mt-1 font-medium">清單</span></button>
       </div>
 
+      {/* Add Expense Modal */}
       {isAddExpenseOpen && (
         <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom-20 relative">
@@ -749,11 +831,13 @@ const TripDashboard = ({ tripData }) => {
               <input type="text" placeholder="項目名稱 (如: 晚餐)" className="w-full p-4 bg-stone-50 rounded-xl border border-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-900" value={newExpense.title} onChange={e => setNewExpense({...newExpense, title: e.target.value})} autoFocus />
               <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400">$</span><input type="number" placeholder="0" className="w-full p-4 pl-8 bg-stone-50 rounded-xl border border-stone-100 focus:outline-none focus:ring-2 focus:ring-stone-900 font-bold text-lg" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})} /></div>
               
+              {/* 付款人選擇 */}
               <div>
                 <p className="text-xs text-stone-400 mb-2 font-bold uppercase">誰先付錢?</p>
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">{participants.map(p => (<button key={p.id} onClick={() => setNewExpense({...newExpense, payerId: p.id})} className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${newExpense.payerId === p.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200'}`}><img src={p.avatar} className="w-5 h-5 rounded-full" alt=""/> <span className="text-xs font-bold">{p.name}</span></button>))}</div>
               </div>
 
+              {/* 分攤對象選擇 */}
               <div>
                 <p className="text-xs text-stone-400 mb-2 font-bold uppercase">分攤給誰?</p>
                 <div className="flex flex-col gap-2">
@@ -786,16 +870,20 @@ const TripDashboard = ({ tripData }) => {
                     })}
                 </div>
               </div>
+
               <button onClick={handleAddExpense} className="w-full py-4 bg-stone-900 text-white rounded-xl font-bold text-lg hover:bg-stone-800 transition-colors shadow-lg">確認新增</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Add Person Modal */}
       {isAddPersonOpen && (
         <div className="fixed inset-0 z-[80] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
              <button onClick={() => setIsAddPersonOpen(false)} className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600"><X size={20}/></button>
+             
+             {/* List of current participants for management */}
              <div className="mb-6 text-left">
                 <h4 className="text-sm font-bold text-stone-500 mb-3 uppercase tracking-wider">目前成員</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -805,11 +893,19 @@ const TripDashboard = ({ tripData }) => {
                         <img src={p.avatar} className="w-8 h-8 rounded-full" alt={p.name} />
                         <span className="font-medium text-stone-700">{p.name}</span>
                       </div>
-                      <button onClick={() => handleRemovePerson(p.id)} className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="移除"><Trash2 size={16} /></button>
+                      {/* Prevent removing the last person or specific logic can be added */}
+                      <button 
+                        onClick={() => handleRemovePerson(p.id)}
+                        className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="移除"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   ))}
                 </div>
              </div>
+
              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400"><UserPlus size={32}/></div>
              <h3 className="text-lg font-bold mb-4">新增旅伴</h3>
              <input type="text" placeholder="輸入名字..." className="w-full p-3 bg-stone-50 border border-stone-100 rounded-xl mb-4 text-center focus:outline-none focus:ring-2 focus:ring-stone-900" value={newPersonName} onChange={e => setNewPersonName(e.target.value)} />
@@ -828,158 +924,6 @@ const TripDashboard = ({ tripData }) => {
     </div>
   );
 };
-
-// --- 3. 主程式入口 (App) ---
-
-export default function App() {
-  const [isLocked, setIsLocked] = useState(!!TRIP_DATA.password);
-
-  // 如果沒有設定密碼，直接進入 Dashboard
-  if (!isLocked) {
-    return <TripDashboard tripData={TRIP_DATA} onBack={() => {}} />;
-  }
-
-  // 否則顯示鎖定畫面
-  return (
-    <div className="font-sans text-stone-700 antialiased selection:bg-stone-200">
-      <TripLoginModal 
-        trip={TRIP_DATA} 
-        onUnlock={() => setIsLocked(false)} 
-        onClose={() => {}} // 單一行程模式下關閉按鈕無作用
-      />
-    </div>
-  );
-}
-
-// 2.4 新增：餐點詳情頁 (Food Detail Modal) - Redesigned
-const FoodDetailModal = ({ item, onClose }) => {
-  if (!item) return null;
-
-  const handleAskGemini = () => {
-    // 建立更具體的查詢 Prompt
-    const query = `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
-    const url = `https://gemini.google.com/app?q=${encodeURIComponent(query)}`;
-    window.open(url, '_blank');
-  };
-
-  const handleGoogleMap = () => {
-    const query = item.location ? `${item.title} ${item.location}` : item.title;
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
-  };
-
-  return (
-    <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl relative h-[85vh] md:h-auto md:max-h-[85vh] flex flex-col">
-        {/* Header Image Area */}
-        <div className="h-56 bg-stone-200 relative shrink-0">
-          <img 
-            src={`https://source.unsplash.com/800x600/?korean,food,${item.title}`} 
-            onError={(e) => e.target.src = "https://images.unsplash.com/photo-1580651315530-69c8e0026377?q=80&w=2070&auto=format&fit=crop"}
-            alt={item.title} 
-            className="w-full h-full object-cover"
-          />
-          
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors border border-white/20">
-            <X size={20} />
-          </button>
-          
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
-             <div className="flex gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded-md bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider">Food</span>
-                <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1">
-                   <Star size={10} className="fill-current"/> 4.5 (模擬)
-                </span>
-             </div>
-            <h2 className="text-3xl font-bold text-white mb-1 shadow-sm">{item.title}</h2>
-            <p className="text-white/80 text-sm flex items-center gap-1 font-medium"><MapPin size={14}/> {item.location || '首爾'}</p>
-          </div>
-        </div>
-
-        {/* Content Scroll Area */}
-        <div className="p-6 overflow-y-auto flex-1 bg-stone-50">
-          
-          {/* Quick Actions (Stickyish) */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button onClick={handleGoogleMap} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-blue-200 hover:text-blue-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
-              <MapPin size={18} className="text-blue-500"/> Google 導航
-            </button>
-            <button onClick={() => window.open(`https://www.instagram.com/explore/tags/${item.title}/`, '_blank')} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-pink-200 hover:text-pink-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
-              <Camera size={18} className="text-pink-500"/> IG 美食照
-            </button>
-          </div>
-
-          {/* Gemini AI Card (Redesigned) */}
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-100 relative overflow-hidden mb-6 group">
-            <div className="absolute top-0 right-0 p-0 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Sparkles size={120} className="text-indigo-600 -mr-4 -mt-4"/>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-indigo-700 font-bold">
-                    <div className="p-1.5 bg-indigo-100 rounded-lg"><Sparkles size={16} /></div>
-                    <span>AI 探店助手</span>
-                </div>
-                <span className="text-[10px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded-full">Gemini Powered</span>
-            </div>
-            
-            <div className="space-y-4">
-               {/* 模擬的結構化資料 */}
-               <div className="flex gap-3 items-start">
-                   <div className="mt-0.5 p-1 bg-orange-100 rounded text-orange-600 shrink-0"><ThumbsUp size={14}/></div>
-                   <div>
-                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">必吃推薦</span>
-                       <p className="text-sm text-stone-700 font-medium leading-relaxed">{item.desc || '尚未載入推薦菜色，請點擊下方按鈕詢問 AI。'}</p>
-                   </div>
-               </div>
-
-               <div className="flex gap-3 items-start">
-                   <div className="mt-0.5 p-1 bg-green-100 rounded text-green-600 shrink-0"><Wallet size={14}/></div>
-                   <div>
-                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">人均預算</span>
-                       <p className="text-sm text-stone-700 font-medium">約 ₩15,000 - ₩30,000 (預估)</p>
-                   </div>
-               </div>
-
-               <div className="flex gap-3 items-start">
-                   <div className="mt-0.5 p-1 bg-red-100 rounded text-red-600 shrink-0"><AlertTriangle size={14}/></div>
-                   <div>
-                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">避雷 / 貼心提醒</span>
-                       <p className="text-sm text-stone-700 font-medium">用餐尖峰時段可能需要排隊。建議先確認是否可預約。</p>
-                   </div>
-               </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-indigo-50">
-                <button 
-                onClick={handleAskGemini}
-                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-                >
-                <MessageCircle size={16} /> 詢問 Gemini 詳細評價
-                </button>
-                <p className="text-[10px] text-center text-stone-300 mt-2">點擊將開啟 Google Gemini 進行即時分析</p>
-            </div>
-          </div>
-
-          {/* Location Preview (Static Map Placeholder) */}
-          <div className="rounded-3xl overflow-hidden border border-stone-200 h-40 relative group cursor-pointer" onClick={handleGoogleMap}>
-             <img src="https://maps.googleapis.com/maps/api/staticmap?center=Seoul&zoom=13&size=600x300&maptype=roadmap&sensor=false&key=YOUR_API_KEY_HERE" 
-                  onError={(e) => e.target.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Seoul_Montage.png/1200px-Seoul_Montage.png"} // Fallback image
-                  alt="Map Preview" 
-                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-             <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/0 transition-colors">
-                <button className="px-4 py-2 bg-white/90 backdrop-blur rounded-full text-xs font-bold shadow-sm flex items-center gap-1 group-hover:scale-110 transition-transform">
-                    <MapPin size={14}/> 查看地圖
-                </button>
-             </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ... existing code for TripDashboard and others ...
 
 // --- 3. 主程式入口 (App) ---
 
