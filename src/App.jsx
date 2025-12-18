@@ -5,7 +5,7 @@ import {
   Wallet, ArrowRightLeft, Plus, X, ArrowRight, Umbrella, Car, Snowflake, 
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
   Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
-  AlertCircle, Sparkles, Search
+  AlertCircle, Sparkles, Search, Star, ThumbsUp, AlertTriangle, MessageCircle
 } from 'lucide-react';
 
 // --- 1. 資料庫區 (Data Layer) ---
@@ -828,6 +828,158 @@ const TripDashboard = ({ tripData }) => {
     </div>
   );
 };
+
+// --- 3. 主程式入口 (App) ---
+
+export default function App() {
+  const [isLocked, setIsLocked] = useState(!!TRIP_DATA.password);
+
+  // 如果沒有設定密碼，直接進入 Dashboard
+  if (!isLocked) {
+    return <TripDashboard tripData={TRIP_DATA} onBack={() => {}} />;
+  }
+
+  // 否則顯示鎖定畫面
+  return (
+    <div className="font-sans text-stone-700 antialiased selection:bg-stone-200">
+      <TripLoginModal 
+        trip={TRIP_DATA} 
+        onUnlock={() => setIsLocked(false)} 
+        onClose={() => {}} // 單一行程模式下關閉按鈕無作用
+      />
+    </div>
+  );
+}
+
+// 2.4 新增：餐點詳情頁 (Food Detail Modal) - Redesigned
+const FoodDetailModal = ({ item, onClose }) => {
+  if (!item) return null;
+
+  const handleAskGemini = () => {
+    // 建立更具體的查詢 Prompt
+    const query = `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
+    const url = `https://gemini.google.com/app?q=${encodeURIComponent(query)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleGoogleMap = () => {
+    const query = item.location ? `${item.title} ${item.location}` : item.title;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl relative h-[85vh] md:h-auto md:max-h-[85vh] flex flex-col">
+        {/* Header Image Area */}
+        <div className="h-56 bg-stone-200 relative shrink-0">
+          <img 
+            src={`https://source.unsplash.com/800x600/?korean,food,${item.title}`} 
+            onError={(e) => e.target.src = "https://images.unsplash.com/photo-1580651315530-69c8e0026377?q=80&w=2070&auto=format&fit=crop"}
+            alt={item.title} 
+            className="w-full h-full object-cover"
+          />
+          
+          <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors border border-white/20">
+            <X size={20} />
+          </button>
+          
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
+             <div className="flex gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded-md bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider">Food</span>
+                <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1">
+                   <Star size={10} className="fill-current"/> 4.5 (模擬)
+                </span>
+             </div>
+            <h2 className="text-3xl font-bold text-white mb-1 shadow-sm">{item.title}</h2>
+            <p className="text-white/80 text-sm flex items-center gap-1 font-medium"><MapPin size={14}/> {item.location || '首爾'}</p>
+          </div>
+        </div>
+
+        {/* Content Scroll Area */}
+        <div className="p-6 overflow-y-auto flex-1 bg-stone-50">
+          
+          {/* Quick Actions (Stickyish) */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <button onClick={handleGoogleMap} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-blue-200 hover:text-blue-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
+              <MapPin size={18} className="text-blue-500"/> Google 導航
+            </button>
+            <button onClick={() => window.open(`https://www.instagram.com/explore/tags/${item.title}/`, '_blank')} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-pink-200 hover:text-pink-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
+              <Camera size={18} className="text-pink-500"/> IG 美食照
+            </button>
+          </div>
+
+          {/* Gemini AI Card (Redesigned) */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-100 relative overflow-hidden mb-6 group">
+            <div className="absolute top-0 right-0 p-0 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Sparkles size={120} className="text-indigo-600 -mr-4 -mt-4"/>
+            </div>
+            
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-indigo-700 font-bold">
+                    <div className="p-1.5 bg-indigo-100 rounded-lg"><Sparkles size={16} /></div>
+                    <span>AI 探店助手</span>
+                </div>
+                <span className="text-[10px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded-full">Gemini Powered</span>
+            </div>
+            
+            <div className="space-y-4">
+               {/* 模擬的結構化資料 */}
+               <div className="flex gap-3 items-start">
+                   <div className="mt-0.5 p-1 bg-orange-100 rounded text-orange-600 shrink-0"><ThumbsUp size={14}/></div>
+                   <div>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">必吃推薦</span>
+                       <p className="text-sm text-stone-700 font-medium leading-relaxed">{item.desc || '尚未載入推薦菜色，請點擊下方按鈕詢問 AI。'}</p>
+                   </div>
+               </div>
+
+               <div className="flex gap-3 items-start">
+                   <div className="mt-0.5 p-1 bg-green-100 rounded text-green-600 shrink-0"><Wallet size={14}/></div>
+                   <div>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">人均預算</span>
+                       <p className="text-sm text-stone-700 font-medium">約 ₩15,000 - ₩30,000 (預估)</p>
+                   </div>
+               </div>
+
+               <div className="flex gap-3 items-start">
+                   <div className="mt-0.5 p-1 bg-red-100 rounded text-red-600 shrink-0"><AlertTriangle size={14}/></div>
+                   <div>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">避雷 / 貼心提醒</span>
+                       <p className="text-sm text-stone-700 font-medium">用餐尖峰時段可能需要排隊。建議先確認是否可預約。</p>
+                   </div>
+               </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-indigo-50">
+                <button 
+                onClick={handleAskGemini}
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                >
+                <MessageCircle size={16} /> 詢問 Gemini 詳細評價
+                </button>
+                <p className="text-[10px] text-center text-stone-300 mt-2">點擊將開啟 Google Gemini 進行即時分析</p>
+            </div>
+          </div>
+
+          {/* Location Preview (Static Map Placeholder) */}
+          <div className="rounded-3xl overflow-hidden border border-stone-200 h-40 relative group cursor-pointer" onClick={handleGoogleMap}>
+             <img src="https://maps.googleapis.com/maps/api/staticmap?center=Seoul&zoom=13&size=600x300&maptype=roadmap&sensor=false&key=YOUR_API_KEY_HERE" 
+                  onError={(e) => e.target.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Seoul_Montage.png/1200px-Seoul_Montage.png"} // Fallback image
+                  alt="Map Preview" 
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+             <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/0 transition-colors">
+                <button className="px-4 py-2 bg-white/90 backdrop-blur rounded-full text-xs font-bold shadow-sm flex items-center gap-1 group-hover:scale-110 transition-transform">
+                    <MapPin size={14}/> 查看地圖
+                </button>
+             </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ... existing code for TripDashboard and others ...
 
 // --- 3. 主程式入口 (App) ---
 
