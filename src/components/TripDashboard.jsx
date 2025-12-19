@@ -1,321 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  MapPin, Clock, Users, Share2, ChevronLeft, MoreHorizontal, Coffee, 
-  Camera, Utensils, Train, Moon, Sun, Heart, Calendar, Plane, Navigation, 
-  Wallet, ArrowRightLeft, Plus, X, ArrowRight, Umbrella, Car, Snowflake, 
-  ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
-  Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
-  AlertCircle, Sparkles, Search, Star, ThumbsUp, AlertTriangle, MessageCircle,
-  Info, Map, Languages, Calculator, LayoutGrid, Cloud, RefreshCw, Anchor
-} from 'lucide-react';
-
-// --- Firebase Imports ---
-import { initializeApp } from "firebase/app";
-import { getAuth, signInAnonymously } from "firebase/auth";
-import { 
-  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, setDoc, getDocs, serverTimestamp, getDoc, writeBatch 
-} from "firebase/firestore";
-
-// --- 資料庫引入 (Import Data) ---
-import { TRIP_REGISTRY, ALL_TRIPS_CONFIG, DEFAULT_PACKING_LIST } from './config/tripsData';
-
-// --- 0. Firebase 設定區 ---
-const firebaseConfig = {
-  apiKey: "AIzaSyDwBtBbVpJ5RU2LkSVaDsGVbd2QAITx7mA",
-  authDomain: "my-family-trip.firebaseapp.com",
-  projectId: "my-family-trip",
-  storageBucket: "my-family-trip.firebasestorage.app",
-  messagingSenderId: "757482722852",
-  appId: "1:757482722852:web:2b35e7e4fcd1ab6c362ab1"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// ==========================================
-// 2. UI 元件區 (Components)
-// ==========================================
-
-// 2.1 標籤元件
-const Tag = ({ type }) => {
-  const styles = {
-    food: "bg-orange-50 text-orange-600 border-orange-100",
-    sightseeing: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    transport: "bg-blue-50 text-blue-600 border-blue-100",
-    hotel: "bg-purple-50 text-purple-600 border-purple-100",
-    info: "bg-gray-50 text-gray-600 border-gray-100",
-  };
-  
-  const labelMap = { food: '餐飲', sightseeing: '景點', transport: '交通', hotel: '住宿', info: '資訊' };
-
-  return (
-    <span className={`text-[10px] px-2.5 py-1 rounded-full border font-medium ${styles[type] || "bg-gray-50 text-gray-600"}`}>
-      {labelMap[type] || '其他'}
-    </span>
-  );
-};
-
-// 2.2 記帳邏輯
-const calculateDebts = (expenses, participants) => {
-  if (!participants || participants.length === 0) return [];
-  const balances = {};
-  participants.forEach(p => balances[p.id] = 0);
-
-  expenses.forEach(exp => {
-    // 檢查 payer 是否存在
-    if (!participants.find(p => p.id === exp.payerId)) return;
-
-    const payerId = exp.payerId;
-    const amount = parseFloat(exp.amount);
-    
-    // 找出分攤對象
-    const beneficiaryIds = exp.beneficiaryIds && exp.beneficiaryIds.length > 0 
-      ? exp.beneficiaryIds 
-      : participants.map(p => p.id);
-    
-    // 取得權重設定 (若無則預設為 1)
-    const weights = exp.splitWeights || {};
-    const totalWeight = beneficiaryIds.reduce((sum, id) => sum + (parseFloat(weights[id]) || 1), 0);
-    
-    if (totalWeight > 0) {
-      // 付款人先 + 總金額
-      balances[payerId] += amount;
-
-      // 每個受益人 (包含付款人自己) 扣掉應付的份額 (按權重)
-      beneficiaryIds.forEach(pId => {
-        if (balances[pId] !== undefined) {
-          const weight = parseFloat(weights[pId]) || 1;
-          const userShare = (amount * weight) / totalWeight;
-          balances[pId] -= userShare;
-        }
-      });
-    }
-  });
-
-  let debtors = [], creditors = [];
-  
-  Object.keys(balances).forEach(id => {
-    const amount = balances[id];
-    // 避免浮點數誤差
-    if (amount < -1) debtors.push({ id: parseInt(id), amount });
-    if (amount > 1) creditors.push({ id: parseInt(id), amount });
-  });
-
-  const transactions = [];
-  debtors.sort((a, b) => a.amount - b.amount);
-  creditors.sort((a, b) => b.amount - a.amount);
-
-  let i = 0, j = 0;
-
-  while (i < debtors.length && j < creditors.length) {
-    const debtor = debtors[i];
-    const creditor = creditors[j];
-    
-    const amount = Math.min(Math.abs(debtor.amount), creditor.amount);
-    
-    // 安全檢查：確保找到人
-    const fromPerson = participants.find(p => p.id === debtor.id);
-    const toPerson = participants.find(p => p.id === creditor.id);
-
-    if (fromPerson && toPerson) {
-        transactions.push({
-          from: fromPerson,
-          to: toPerson,
-          amount: Math.round(amount)
-        });
-    }
-
-    debtor.amount += amount;
-    creditor.amount -= amount;
-
-    if (Math.abs(debtor.amount) < 1) i++;
-    if (creditor.amount < 1) j++;
-  }
-
-  return transactions;
-};
-
-// 2.3 登入鎖定畫面
-const TripLoginScreen = ({ tripInfo, onUnlock, onBack }) => {
-  const [input, setInput] = useState('');
-  const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      const docRef = doc(db, 'artifacts', tripInfo.id, 'public', 'config');
-      const docSnap = await getDoc(docRef);
-      
-      let validPassword = "";
-      
-      if (docSnap.exists()) {
-        validPassword = docSnap.data().password;
-      } else {
-        // Init default password if not exists
-        await setDoc(docRef, { password: tripInfo.defaultPassword });
-        validPassword = tripInfo.defaultPassword;
-      }
-
-      if (input === validPassword) {
-        onUnlock();
-      } else {
-        setError(true);
-        setTimeout(() => setError(false), 2000);
-      }
-    } catch (err) {
-      console.error("Auth Error", err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-6">
-      <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl relative text-center border border-stone-100">
-        <button onClick={onBack} className="absolute top-6 left-6 p-2 text-stone-400 hover:text-stone-600 transition-colors"><ChevronLeft size={20} /></button>
-        <div className="flex justify-center mb-6"><div className="bg-stone-100 p-4 rounded-2xl text-stone-700 shadow-inner"><Lock size={32} /></div></div>
-        <h3 className="text-xl font-bold text-stone-800 mb-2">行程已鎖定</h3>
-        <p className="text-sm text-stone-500 mb-6">請輸入「{tripInfo.title}」的通關密語</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Passcode" className="w-full bg-stone-50 border-2 border-stone-100 rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest text-stone-800 focus:outline-none focus:border-stone-800 focus:bg-white transition-all" autoFocus disabled={loading} />
-          <button type="submit" disabled={loading} className="w-full bg-stone-900 text-white rounded-xl py-3 font-bold text-lg hover:bg-stone-800 transition-all shadow-lg active:scale-95 disabled:opacity-50">{loading ? "驗證中..." : "解鎖"}</button>
-        </form>
-        {error && <p className="mt-4 text-red-500 text-sm font-bold animate-pulse flex justify-center gap-1"><X size={16} /> 密碼錯誤</p>}
-      </div>
-    </div>
-  );
-};
-
-// 2.4 通用詳情頁 (Item Detail Modal)
-const ItemDetailModal = ({ item, onClose }) => {
-  if (!item) return null;
-
-  const getGeminiQuery = () => {
-    if (item.type === 'food') return `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
-    if (item.type === 'sightseeing') return `請介紹首爾景點：${item.title}。請提供：1. 景點特色與必看亮點 2. 建議停留時間 3. 交通方式與附近順遊景點 4. 適合家庭/親子的程度？`;
-    if (item.type === 'hotel') return `請分析首爾住宿：${item.title}。請提供：1. 網友綜合評價 (優缺點) 2. 距離地鐵站/機場巴士的便利性 3. 附近便利商店與美食 4. 是否適合家庭入住？`;
-    if (item.type === 'transport') return `請問在首爾如何搭乘：${item.title} (${item.note})？請提供：1. 搭乘位置與路線 2. 時刻表或班次頻率 3. 票價與支付方式 (T-money?)`;
-    return `請介紹：${item.title} (${item.location || '首爾'})。請提供詳細的旅遊資訊、評價以及注意事項。`;
-  };
-
-  const handleAskGemini = () => {
-    const query = getGeminiQuery();
-    const url = `https://gemini.google.com/app?q=${encodeURIComponent(query)}`;
-    window.open(url, '_blank');
-  };
-
-  const handleGoogleSearch = () => {
-    const query = `${item.title} ${item.location || '首爾'} 評價`;
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-  };
-
-  const handleGoogleMap = () => {
-    const query = item.address || (item.location ? `${item.title} ${item.location}` : item.title);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
-  };
-
-  const getAiConfig = (type) => {
-     switch (type) {
-        case 'food': return { title: "AI 探店助手", prompts: ["必吃推薦", "人均預算", "避雷 / 貼心提醒"], icons: [<ThumbsUp size={14}/>, <Wallet size={14}/>, <AlertTriangle size={14}/>] };
-        case 'sightseeing': return { title: "AI 景點導覽", prompts: ["特色亮點", "建議停留", "參觀貼士"], icons: [<Star size={14}/>, <Clock size={14}/>, <AlertCircle size={14}/>] };
-        case 'hotel': return { title: "AI 住宿分析", prompts: ["住宿評價", "周邊機能", "入住須知"], icons: [<Star size={14}/>, <MapPin size={14}/>, <AlertCircle size={14}/>] };
-        default: return { title: "AI 旅遊助手", prompts: ["相關資訊", "網友評價", "注意事項"], icons: [<Search size={14}/>, <MessageCircle size={14}/>, <AlertCircle size={14}/>] };
-     }
-  }
-
-  const aiConfig = getAiConfig(item.type);
-
-  return (
-    <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl relative h-[85vh] md:h-auto md:max-h-[85vh] flex flex-col">
-        <div className="h-56 bg-stone-200 relative shrink-0">
-          <img src={`https://source.unsplash.com/800x600/?korean,${item.type},${item.title}`} onError={(e) => e.target.src = "https://images.unsplash.com/photo-1580651315530-69c8e0026377?q=80&w=2070&auto=format&fit=crop"} alt={item.title} className="w-full h-full object-cover" />
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors border border-white/20"><X size={20} /></button>
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
-             <div className="flex gap-2 mb-2">
-                <span className={`px-2 py-0.5 rounded-md text-white text-[10px] font-bold uppercase tracking-wider ${item.type === 'food' ? 'bg-orange-500' : item.type === 'sightseeing' ? 'bg-emerald-500' : 'bg-blue-500'}`}>{item.type}</span>
-                {item.rating && <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1"><Star size={10} className="fill-current text-yellow-400"/> {item.rating}</span>}
-             </div>
-            <h2 className="text-3xl font-bold text-white mb-1 shadow-sm">{item.title}</h2>
-            <p className="text-white/80 text-sm flex items-center gap-1 font-medium truncate max-w-full"><MapPin size={14} className="shrink-0"/> {item.address || item.location || '首爾'}</p>
-          </div>
-        </div>
-        <div className="p-6 overflow-y-auto flex-1 bg-stone-50">
-          <div className="grid grid-cols-2 gap-3 mb-6">
-             <button onClick={handleGoogleSearch} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-purple-200 hover:text-purple-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base"><Search size={18} className="text-purple-500"/> Google 搜尋</button>
-             <button onClick={handleGoogleMap} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-blue-200 hover:text-blue-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base"><MapPin size={18} className="text-blue-500"/> Google 導航</button>
-            {['food', 'sightseeing'].includes(item.type) && <button onClick={() => window.open(`https://www.instagram.com/explore/tags/${item.title}/`, '_blank')} className="col-span-2 p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-pink-200 hover:text-pink-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base"><Camera size={18} className="text-pink-500"/> Instagram 美照</button>}
-            {item.link && <button onClick={() => window.open(item.link, '_blank')} className="col-span-2 p-3 rounded-2xl bg-stone-800 text-white hover:bg-stone-700 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base"><Globe size={18}/> 查看相關連結</button>}
-          </div>
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-100 relative overflow-hidden mb-6 group">
-            <div className="absolute top-0 right-0 p-0 opacity-5 group-hover:opacity-10 transition-opacity"><Sparkles size={120} className="text-indigo-600 -mr-4 -mt-4"/></div>
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-indigo-700 font-bold"><div className="p-1.5 bg-indigo-100 rounded-lg"><Sparkles size={16} /></div><span>{aiConfig.title}</span></div>
-                <span className="text-[10px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded-full">Gemini Powered</span>
-            </div>
-            <div className="space-y-4">
-               <div className="flex gap-3 items-start"><div className="mt-0.5 p-1 bg-orange-100 rounded text-orange-600 shrink-0">{aiConfig.icons[0]}</div><div><span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">{aiConfig.prompts[0]}</span><p className="text-sm text-stone-700 font-medium leading-relaxed">{item.desc || '尚未載入資訊，請點擊下方按鈕詢問 AI。'}</p></div></div>
-               <div className="flex gap-3 items-start"><div className="mt-0.5 p-1 bg-green-100 rounded text-green-600 shrink-0">{aiConfig.icons[1]}</div><div><span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">{aiConfig.prompts[1]}</span><p className="text-sm text-stone-700 font-medium">{item.price || item.note || "暫無資料"}</p></div></div>
-               <div className="flex gap-3 items-start"><div className="mt-0.5 p-1 bg-red-100 rounded text-red-600 shrink-0">{aiConfig.icons[2]}</div><div><span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">{aiConfig.prompts[2]}</span><p className="text-sm text-stone-700 font-medium">建議事先確認營業時間與人潮狀況。</p></div></div>
-            </div>
-            <div className="mt-6 pt-4 border-t border-indigo-50">
-                <button onClick={handleAskGemini} className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"><MessageCircle size={16} /> 詢問 Gemini 詳細資訊</button>
-                <p className="text-[10px] text-center text-stone-300 mt-2">點擊將開啟 Google Gemini 進行即時分析</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// 2.6 行程選擇列表 (TripListScreen)
-const TripListScreen = ({ onSelectTrip }) => {
-  return (
-    <div className="w-full min-h-screen bg-[#FDFBF7] p-6 flex flex-col items-center">
-      <div className="w-full max-w-5xl mb-8 mt-4">
-        <h1 className="text-3xl font-bold text-stone-800">我的旅程</h1>
-        <p className="text-stone-400 text-sm mt-1">Ready for your next adventure?</p>
-      </div>
-
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6">
-        {TRIP_REGISTRY.map((trip) => (
-          <div key={trip.id} onClick={() => onSelectTrip(trip.id)} className="bg-white rounded-3xl shadow-sm border border-stone-100 overflow-hidden cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative h-80 flex flex-col">
-            <div className="absolute top-4 right-4 z-10 bg-black/30 backdrop-blur-md p-2 rounded-full text-white"><Lock size={14} /></div>
-            <div className="h-48 relative overflow-hidden flex-shrink-0">
-              <img src={trip.coverImage} alt={trip.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-              <div className="absolute bottom-4 left-4 right-4 text-white">
-                <h3 className="font-bold text-xl mb-1 shadow-sm leading-tight">{trip.title}</h3>
-                <p className="text-xs opacity-90 font-medium flex items-center gap-1"><Calendar size={12} /> {trip.dates.split(' - ')[0]} 起</p>
-              </div>
-            </div>
-            <div className="p-5 flex justify-between items-center bg-white flex-1">
-              <div><p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">TRIP</p><p className="text-sm text-stone-600 line-clamp-1">{trip.subtitle}</p></div>
-              <div className="w-10 h-10 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-400 group-hover:bg-stone-800 group-hover:text-white transition-all"><ArrowRight size={20} /></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 2.8 主行程介面 (TripDashboard)
+// --- components/TripDashboard.jsx ---
 const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const [activeTab, setActiveTab] = useState('schedule'); 
   const [activeDay, setActiveDay] = useState(1);
   const [likedItems, setLikedItems] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
   
-  // Data
-  const tripData = ALL_TRIPS_CONFIG[tripId];
+  // Data Loading based on ID
+  const tripData = ALL_TRIPS_CONFIG[tripId] ? ALL_TRIPS_CONFIG[tripId].data : null;
 
   // State
   const [participants, setParticipants] = useState([]);
@@ -405,7 +96,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
     }
   }, [isAddExpenseOpen, participants]);
 
-  // Handlers
+  // Handlers (All wrapped in safe checks)
   const handleAddExpense = async () => {
     if (!newExpense.title || !newExpense.amount) return;
     const finalBeneficiaries = newExpense.beneficiaryIds.length > 0 ? newExpense.beneficiaryIds : participants.map(p => p.id);
@@ -444,13 +135,23 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   };
   
   const togglePackingItem = async (cat, itemId) => {
-     const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
-     let currentChecked = false;
+     // Find the doc ID, packingList state has items with firestore IDs
+     // We need to find the item to get its current status
+     let itemToUpdate = null;
      for(const c of packingList) {
         const found = c.items.find(i => i.id === itemId);
-        if(found) { currentChecked = found.checked; break; }
+        if(found) { itemToUpdate = found; break; }
      }
-     await updateDoc(itemRef, { checked: !currentChecked });
+     if (itemToUpdate) {
+        const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
+        await updateDoc(itemRef, { checked: !itemToUpdate.checked });
+     }
+  };
+  
+  const handleDeletePackingItem = async (itemId) => {
+    if (!itemId) return;
+    const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
+    await deleteDoc(itemRef);
   };
 
   const handleAddPackingItem = async (categoryName) => {
@@ -616,7 +317,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
                            <span className={`text-sm transition-all ${item.checked ? 'text-stone-400 line-through' : 'text-stone-700'}`}>{item.name}</span>
                          </div>
                          <button onClick={async () => {
-                           // Find doc id and delete
                            const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', item.id);
                            await deleteDoc(itemRef);
                          }} className="text-stone-300 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
@@ -667,8 +367,26 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
                         const isSelected = newExpense.beneficiaryIds.includes(p.id);
                         return (
                             <div key={p.id} className="flex items-center justify-between p-2 rounded-xl border border-stone-100 hover:bg-stone-50 transition-colors">
-                                <button onClick={() => toggleBeneficiary(p.id)} className={`flex items-center gap-3 flex-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}><img src={p.avatar} className="w-8 h-8 rounded-full" alt=""/> <span className="text-sm font-bold">{p.name}</span></button>
-                                {isSelected && (<div className="flex items-center gap-2"><span className="text-xs text-stone-400 font-bold">權重</span><input type="number" className="w-12 p-1 text-center bg-white border border-stone-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-stone-900" value={newExpense.splitWeights?.[p.id] || 1} onChange={(e) => handleWeightChange(p.id, e.target.value)} step="0.5" min="0" /></div>)}
+                                <button 
+                                    onClick={() => toggleBeneficiary(p.id)} 
+                                    className={`flex items-center gap-3 flex-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}
+                                >
+                                    <img src={p.avatar} className="w-8 h-8 rounded-full" alt=""/> 
+                                    <span className="text-sm font-bold">{p.name}</span>
+                                </button>
+                                {isSelected && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-stone-400 font-bold">權重</span>
+                                        <input 
+                                            type="number" 
+                                            className="w-12 p-1 text-center bg-white border border-stone-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-stone-900"
+                                            value={newExpense.splitWeights?.[p.id] || 1}
+                                            onChange={(e) => handleWeightChange(p.id, e.target.value)}
+                                            step="0.5"
+                                            min="0"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -714,54 +432,3 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
     </div>
   );
 };
-
-// --- 3. 主程式入口 (App) ---
-
-export default function App() {
-  const [screen, setScreen] = useState('list'); // list, login, dashboard
-  const [selectedTripId, setSelectedTripId] = useState(null);
-
-  // Load auth state from local storage on mount
-  useEffect(() => {
-    // Optional: Auto-login logic
-  }, []);
-
-  const handleSelectTrip = (id) => {
-    setSelectedTripId(id);
-    // Check if already authenticated for this trip in session?
-    setScreen('login');
-  };
-
-  const handleUnlock = () => {
-    setScreen('dashboard');
-  };
-
-  const handleBack = () => {
-    setSelectedTripId(null);
-    setScreen('list');
-  };
-
-  const getTripInfo = (id) => TRIP_REGISTRY.find(t => t.id === id);
-
-  return (
-    <div className="font-sans text-stone-700 antialiased selection:bg-stone-200">
-      {screen === 'list' && <TripListScreen onSelectTrip={handleSelectTrip} />}
-      
-      {screen === 'login' && selectedTripId && (
-        <TripLoginScreen 
-          tripInfo={getTripInfo(selectedTripId)} 
-          onUnlock={handleUnlock} 
-          onBack={handleBack}
-        />
-      )}
-
-      {screen === 'dashboard' && selectedTripId && (
-        <TripDashboard 
-          tripId={selectedTripId} 
-          tripInfo={getTripInfo(selectedTripId)}
-          onBack={handleBack} 
-        />
-      )}
-    </div>
-  );
-}
