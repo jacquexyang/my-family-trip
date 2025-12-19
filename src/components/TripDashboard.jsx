@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ChevronLeft, LayoutGrid, Languages, MessageCircle, Map, Calculator, Train, CheckCircle2, Share2, UserPlus, 
-  Calendar, Sun, Wallet, Edit3, PlusCircle, CheckSquare, Trash2, ArrowRightLeft, Clock, Navigation, Sparkles 
+  Calendar, Sun, Wallet, Edit3, PlusCircle, CheckSquare, Trash2, ArrowRightLeft, Clock, Navigation, Sparkles,
+  MapPin, Copy, ExternalLink // Added missing imports
 } from 'lucide-react';
 import { 
   collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, writeBatch, serverTimestamp 
@@ -51,7 +52,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
      const packingRef = collection(db, 'artifacts', tripId, 'public', 'data', 'packing-list');
      const unsubPacking = onSnapshot(query(packingRef, orderBy('createdAt')), (snapshot) => {
          if (snapshot.empty) {
-            if (DEFAULT_PACKING_LIST) {
+            if (tripId === 'seoul_2025' && DEFAULT_PACKING_LIST) {
                 const batch = writeBatch(db);
                 DEFAULT_PACKING_LIST.forEach(item => {
                    const docRef = doc(packingRef);
@@ -173,7 +174,9 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   };
 
   const copyAddress = (text, id) => { navigator.clipboard.writeText(text); setCopiedId(id); setTimeout(() => setCopiedId(null), 2000); };
+  const handleNavigation = (location, title) => { const query = location || title; const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; window.open(url, '_blank'); };
   const handleItemClick = (item) => setSelectedItem(item);
+  const handleUpdateBudget = () => { setBudget(parseInt(newBudgetInput)); setIsEditingBudget(false); };
   const toggleBeneficiary = (id) => { setNewExpense(prev => { const current = prev.beneficiaryIds; return current.includes(id) ? { ...prev, beneficiaryIds: current.filter(i => i !== id) } : { ...prev, beneficiaryIds: [...current, id] }; }); };
   const handleWeightChange = (id, val) => { setNewExpense(prev => ({ ...prev, splitWeights: { ...prev.splitWeights, [id]: val } })); };
 
@@ -181,7 +184,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
   const budgetPercentage = Math.min((totalSpent / budget) * 100, 100);
 
-  // Helper for rendering
   const isEqualSplit = (exp) => { 
     const b = exp.beneficiaryIds || []; 
     if (b.length === 0) return true; 
@@ -239,7 +241,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
             <div className="w-px bg-stone-100 my-4"></div>
             <button onClick={() => setActiveTab('checklist')} className={`flex-1 py-5 font-bold text-lg flex justify-center items-center gap-2 transition-colors ${activeTab === 'checklist' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}><CheckSquare size={20}/> 行前清單</button>
           </div>
-          {/* Mobile Tabs */}
           <div className="md:hidden flex p-2 bg-stone-100/50 rounded-t-3xl border-b border-stone-200">
              <button onClick={() => setActiveTab('schedule')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'schedule' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>行程</button>
              <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'expenses' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>記帳</button>
@@ -330,6 +331,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
                            <span className={`text-sm transition-all ${item.checked ? 'text-stone-400 line-through' : 'text-stone-700'}`}>{item.name}</span>
                          </div>
                          <button onClick={async () => {
+                           // Find doc id and delete
                            const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', item.id);
                            await deleteDoc(itemRef);
                          }} className="text-stone-300 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
