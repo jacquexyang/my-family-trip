@@ -1,11 +1,26 @@
-// --- components/TripDashboard.jsx ---
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  ChevronLeft, LayoutGrid, Languages, MessageCircle, Map, Calculator, Train, CheckCircle2, Share2, UserPlus, 
+  Calendar, Sun, Wallet, Edit3, PlusCircle, CheckSquare, Trash2, ArrowRightLeft, Clock, Navigation, Sparkles 
+} from 'lucide-react';
+import { 
+  collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, writeBatch, serverTimestamp 
+} from "firebase/firestore";
+import { signInAnonymously } from "firebase/auth";
+
+// Imports
+import { db, auth } from '../config/firebase';
+import { ALL_TRIPS_CONFIG, DEFAULT_PACKING_LIST } from '../config/tripsData';
+import { calculateDebts } from '../utils/helpers';
+import Tag from './Tag';
+import ItemDetailModal from './ItemDetailModal';
+
 const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const [activeTab, setActiveTab] = useState('schedule'); 
   const [activeDay, setActiveDay] = useState(1);
-  const [likedItems, setLikedItems] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
   
-  // Data Loading based on ID
+  // Data
   const tripData = ALL_TRIPS_CONFIG[tripId] ? ALL_TRIPS_CONFIG[tripId].data : null;
 
   // State
@@ -36,8 +51,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
      const packingRef = collection(db, 'artifacts', tripId, 'public', 'data', 'packing-list');
      const unsubPacking = onSnapshot(query(packingRef, orderBy('createdAt')), (snapshot) => {
          if (snapshot.empty) {
-            // Init default packing list if empty
-            if (tripId === 'seoul_2025') {
+            if (DEFAULT_PACKING_LIST) {
                 const batch = writeBatch(db);
                 DEFAULT_PACKING_LIST.forEach(item => {
                    const docRef = doc(packingRef);
@@ -68,7 +82,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
         if (!snapshot.empty) {
            setParticipants(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id })));
         } else {
-           // Init default participants if empty
            if (tripData.defaultParticipants) {
                const batch = writeBatch(db);
                tripData.defaultParticipants.forEach((p, index) => {
@@ -86,17 +99,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
      return () => { unsubPacking(); unsubExp(); unsubPart(); };
   }, [tripId, tripData]);
 
-  useEffect(() => {
-    if (isAddExpenseOpen && participants.length > 0) {
-        setNewExpense(prev => ({ 
-            ...prev, 
-            beneficiaryIds: participants.map(p => p.id),
-            splitWeights: participants.reduce((acc, p) => ({ ...acc, [p.id]: 1 }), {})
-        }));
-    }
-  }, [isAddExpenseOpen, participants]);
-
-  // Handlers (All wrapped in safe checks)
+  // Handlers
   const handleAddExpense = async () => {
     if (!newExpense.title || !newExpense.amount) return;
     const finalBeneficiaries = newExpense.beneficiaryIds.length > 0 ? newExpense.beneficiaryIds : participants.map(p => p.id);
@@ -135,21 +138,17 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   };
   
   const togglePackingItem = async (cat, itemId) => {
-     // Find the doc ID, packingList state has items with firestore IDs
-     // We need to find the item to get its current status
-     let itemToUpdate = null;
+     // Check local state for checked status
+     let currentChecked = false;
      for(const c of packingList) {
         const found = c.items.find(i => i.id === itemId);
-        if(found) { itemToUpdate = found; break; }
+        if(found) { currentChecked = found.checked; break; }
      }
-     if (itemToUpdate) {
-        const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
-        await updateDoc(itemRef, { checked: !itemToUpdate.checked });
-     }
+     const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
+     await updateDoc(itemRef, { checked: !currentChecked });
   };
   
   const handleDeletePackingItem = async (itemId) => {
-    if (!itemId) return;
     const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
     await deleteDoc(itemRef);
   };
@@ -172,17 +171,30 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
     setShowShareModal(true);
     setTimeout(() => setShowShareModal(false), 3000);
   };
+
   const copyAddress = (text, id) => { navigator.clipboard.writeText(text); setCopiedId(id); setTimeout(() => setCopiedId(null), 2000); };
   const handleItemClick = (item) => setSelectedItem(item);
-  const handleUpdateBudget = () => { setBudget(parseInt(newBudgetInput)); setIsEditingBudget(false); };
   const toggleBeneficiary = (id) => { setNewExpense(prev => { const current = prev.beneficiaryIds; return current.includes(id) ? { ...prev, beneficiaryIds: current.filter(i => i !== id) } : { ...prev, beneficiaryIds: [...current, id] }; }); };
   const handleWeightChange = (id, val) => { setNewExpense(prev => ({ ...prev, splitWeights: { ...prev.splitWeights, [id]: val } })); };
 
   const debts = useMemo(() => calculateDebts(expenses, participants), [expenses, participants]);
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
   const budgetPercentage = Math.min((totalSpent / budget) * 100, 100);
-  const isEqualSplit = (exp) => { const b = exp.beneficiaryIds || []; if (b.length === 0) return true; const w = exp.splitWeights || {}; const f = parseFloat(w[b[0]]) || 1; return b.every(id => (parseFloat(w[id]) || 1) === f); };
-  const getRatioString = (exp) => { const b = exp.beneficiaryIds || []; const w = exp.splitWeights || {}; return b.map(id => parseFloat(w[id]) || 1).join(':'); };
+
+  // Helper for rendering
+  const isEqualSplit = (exp) => { 
+    const b = exp.beneficiaryIds || []; 
+    if (b.length === 0) return true; 
+    const w = exp.splitWeights || {}; 
+    const f = parseFloat(w[b[0]]) || 1; 
+    return b.every(id => (parseFloat(w[id]) || 1) === f); 
+  };
+  
+  const getRatioString = (exp) => { 
+    const b = exp.beneficiaryIds || []; 
+    const w = exp.splitWeights || {}; 
+    return b.map(id => parseFloat(w[id]) || 1).join(':'); 
+  };
 
   return (
     <div className="w-full min-h-screen bg-[#FDFBF7] pb-24 md:pb-0">
@@ -227,6 +239,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
             <div className="w-px bg-stone-100 my-4"></div>
             <button onClick={() => setActiveTab('checklist')} className={`flex-1 py-5 font-bold text-lg flex justify-center items-center gap-2 transition-colors ${activeTab === 'checklist' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}><CheckSquare size={20}/> 行前清單</button>
           </div>
+          {/* Mobile Tabs */}
           <div className="md:hidden flex p-2 bg-stone-100/50 rounded-t-3xl border-b border-stone-200">
              <button onClick={() => setActiveTab('schedule')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'schedule' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>行程</button>
              <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'expenses' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>記帳</button>
@@ -334,15 +347,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
         </div>
       </div>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-3 pb-safe z-50 flex justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <button onClick={() => setActiveTab('schedule')} className={`flex flex-col items-center transition-colors ${activeTab === 'schedule' ? 'text-stone-900' : 'text-stone-400'}`}><Calendar size={24}/><span className="text-[10px] mt-1 font-medium">行程</span></button>
-        <button onClick={() => { if(activeTab === 'expenses') setIsAddExpenseOpen(true); else setActiveTab('expenses'); }} className={`flex flex-col items-center transition-colors ${activeTab === 'expenses' ? 'text-stone-900' : 'text-stone-400'}`}>
-          {activeTab === 'expenses' ? <PlusCircle size={24}/> : <Wallet size={24}/>}
-          <span className="text-[10px] mt-1 font-medium">{activeTab === 'expenses' ? '新增' : '記帳'}</span>
-        </button>
-        <button onClick={() => setActiveTab('checklist')} className={`flex flex-col items-center transition-colors ${activeTab === 'checklist' ? 'text-stone-900' : 'text-stone-400'}`}><CheckSquare size={24}/><span className="text-[10px] mt-1 font-medium">清單</span></button>
-      </div>
-
       {/* Add Expense Modal */}
       {isAddExpenseOpen && (
         <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in">
@@ -367,26 +371,8 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
                         const isSelected = newExpense.beneficiaryIds.includes(p.id);
                         return (
                             <div key={p.id} className="flex items-center justify-between p-2 rounded-xl border border-stone-100 hover:bg-stone-50 transition-colors">
-                                <button 
-                                    onClick={() => toggleBeneficiary(p.id)} 
-                                    className={`flex items-center gap-3 flex-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}
-                                >
-                                    <img src={p.avatar} className="w-8 h-8 rounded-full" alt=""/> 
-                                    <span className="text-sm font-bold">{p.name}</span>
-                                </button>
-                                {isSelected && (
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-stone-400 font-bold">權重</span>
-                                        <input 
-                                            type="number" 
-                                            className="w-12 p-1 text-center bg-white border border-stone-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-stone-900"
-                                            value={newExpense.splitWeights?.[p.id] || 1}
-                                            onChange={(e) => handleWeightChange(p.id, e.target.value)}
-                                            step="0.5"
-                                            min="0"
-                                        />
-                                    </div>
-                                )}
+                                <button onClick={() => toggleBeneficiary(p.id)} className={`flex items-center gap-3 flex-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}><img src={p.avatar} className="w-8 h-8 rounded-full" alt=""/> <span className="text-sm font-bold">{p.name}</span></button>
+                                {isSelected && (<div className="flex items-center gap-2"><span className="text-xs text-stone-400 font-bold">權重</span><input type="number" className="w-12 p-1 text-center bg-white border border-stone-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-stone-900" value={newExpense.splitWeights?.[p.id] || 1} onChange={(e) => handleWeightChange(p.id, e.target.value)} step="0.5" min="0" /></div>)}
                             </div>
                         );
                     })}
@@ -432,3 +418,5 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
     </div>
   );
 };
+
+export default TripDashboard;

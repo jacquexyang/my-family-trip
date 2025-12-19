@@ -1,4 +1,8 @@
-// --- components/TripLoginScreen.jsx ---
+import React, { useState } from 'react';
+import { ChevronLeft, Lock, X } from 'lucide-react';
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from '../config/firebase'; // 引用設定檔
+
 const TripLoginScreen = ({ tripInfo, onUnlock, onBack }) => {
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
@@ -38,3 +42,5 @@ const TripLoginScreen = ({ tripInfo, onUnlock, onBack }) => {
     </div>
   );
 };
+
+export default TripLoginScreen;

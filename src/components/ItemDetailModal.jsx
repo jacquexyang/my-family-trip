@@ -1,6 +1,11 @@
-// --- components/ItemDetailModal.jsx ---
+import React from 'react';
+import { 
+  X, MapPin, Search, Camera, Globe, Sparkles, ThumbsUp, Wallet, AlertTriangle, Star, Clock, AlertCircle, MessageCircle 
+} from 'lucide-react';
+
 const ItemDetailModal = ({ item, onClose }) => {
   if (!item) return null;
+
   const getGeminiQuery = () => {
     if (item.type === 'food') return `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
     if (item.type === 'sightseeing') return `請介紹首爾景點：${item.title}。請提供：1. 景點特色與必看亮點 2. 建議停留時間 3. 交通方式與附近順遊景點 4. 適合家庭/親子的程度？`;
@@ -8,10 +13,11 @@ const ItemDetailModal = ({ item, onClose }) => {
     if (item.type === 'transport') return `請問在首爾如何搭乘：${item.title} (${item.note})？請提供：1. 搭乘位置與路線 2. 時刻表或班次頻率 3. 票價與支付方式 (T-money?)`;
     return `請介紹：${item.title} (${item.location || '首爾'})。請提供詳細的旅遊資訊、評價以及注意事項。`;
   };
+
   const handleAskGemini = () => { const query = getGeminiQuery(); window.open(`https://gemini.google.com/app?q=${encodeURIComponent(query)}`, '_blank'); };
   const handleGoogleSearch = () => { const query = `${item.title} ${item.location || '首爾'} 評價`; window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank'); };
   const handleGoogleMap = () => { const query = item.address || (item.location ? `${item.title} ${item.location}` : item.title); window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank'); };
-  
+
   const getAiConfig = (type) => {
      switch (type) {
         case 'food': return { title: "AI 探店助手", prompts: ["必吃推薦", "人均預算", "避雷 / 貼心提醒"], icons: [<ThumbsUp size={14}/>, <Wallet size={14}/>, <AlertTriangle size={14}/>] };
@@ -20,6 +26,7 @@ const ItemDetailModal = ({ item, onClose }) => {
         default: return { title: "AI 旅遊助手", prompts: ["相關資訊", "網友評價", "注意事項"], icons: [<Search size={14}/>, <MessageCircle size={14}/>, <AlertCircle size={14}/>] };
      }
   }
+
   const aiConfig = getAiConfig(item.type);
 
   return (
@@ -65,3 +72,5 @@ const ItemDetailModal = ({ item, onClose }) => {
     </div>
   );
 };
+
+export default ItemDetailModal;

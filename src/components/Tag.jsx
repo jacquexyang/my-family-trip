@@ -1,4 +1,5 @@
-// --- components/Tag.jsx ---
+import React from 'react';
+
 const Tag = ({ type }) => {
   const styles = {
     food: "bg-orange-50 text-orange-600 border-orange-100",
@@ -7,6 +8,14 @@ const Tag = ({ type }) => {
     hotel: "bg-purple-50 text-purple-600 border-purple-100",
     info: "bg-gray-50 text-gray-600 border-gray-100",
   };
+  
   const labelMap = { food: '餐飲', sightseeing: '景點', transport: '交通', hotel: '住宿', info: '資訊' };
-  return <span className={`text-[10px] px-2.5 py-1 rounded-full border font-medium ${styles[type] || "bg-gray-50 text-gray-600"}`}>{labelMap[type] || '其他'}</span>;
+
+  return (
+    <span className={`text-[10px] px-2.5 py-1 rounded-full border font-medium ${styles[type] || "bg-gray-50 text-gray-600"}`}>
+      {labelMap[type] || '其他'}
+    </span>
+  );
 };
+
+export default Tag;

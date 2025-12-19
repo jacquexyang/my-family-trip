@@ -1,4 +1,6 @@
-// --- components/TripListScreen.jsx ---
+import React from 'react';
+import { Calendar, Lock, ArrowRight } from 'lucide-react';
+
 const TripListScreen = ({ onSelectTrip, tripRegistry }) => {
   return (
     <div className="w-full min-h-screen bg-[#FDFBF7] p-6 flex flex-col items-center">
@@ -29,3 +31,5 @@ const TripListScreen = ({ onSelectTrip, tripRegistry }) => {
     </div>
   );
 };
+
+export default TripListScreen;
