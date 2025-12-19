@@ -213,9 +213,9 @@ const SEOUL_DATA = {
         { id: 502, time: "10:00", type: "sightseeing", title: "光化門", note: "守門將換崗儀式", icon: Users, location: "172 Sejong-daero, Jongno-gu, Seoul" },
         { id: 503, time: "10:30", type: "sightseeing", title: "景福宮", note: "參觀", icon: Castle, location: "161 Sajik-ro, Jongno-gu, Seoul" },
         { id: 504, time: "12:30", type: "food", title: "通仁市場 (午餐)", note: "銅錢便當", price: "約 ₩10,000 - ₩15,000", rating: 4.3, address: "18 Jahamun-ro 15-gil, Jongno-gu, Seoul", icon: Utensils, location: "Tongin Market" },
-        { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "韓屋咖啡廳/文創", icon: Coffee, location: "Seochon Village, Jongno-gu, Seoul" },
+        { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "韓屋咖啡廳", icon: Coffee, location: "Seochon Village, Jongno-gu, Seoul" },
         { id: 506, time: "17:00", type: "sightseeing", title: "漫步回光化門", note: "前往廣場", icon: MapPin, location: "172 Sejong-daero, Jongno-gu, Seoul" },
-        { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "Seoul Lantern Festival", desc: "感受聖誕氣氛。", icon: Gift, location: "172 Sejong-daero, Jongno-gu, Seoul" },
+        { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "燈飾節", icon: Gift, location: "172 Sejong-daero, Jongno-gu, Seoul" },
         { id: 508, time: "20:00", type: "food", title: "聖誕晚餐：世宗村", note: "鐘路美食街", price: "約 ₩30,000 - ₩60,000", address: "Jahamun-ro 1-gil, Jongno-gu, Seoul", icon: Utensils, location: "Sejong Village Food Culture Street" },
       ]
     },
@@ -225,11 +225,11 @@ const SEOUL_DATA = {
       date: "12/26 (五)", 
       weather: "sunny",
       items: [
-        { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "批發市場挖寶。", icon: ShoppingBag, location: "36 Jong-ro 52-gil, Jongno-gu, Seoul" },
-        { id: 602, time: "12:30", type: "food", title: "廣藏市場 (午餐)", note: "綠豆餅/生牛肉/麻藥飯捲", price: "約 ₩15,000 - ₩25,000", rating: 4.1, address: "88 Changgyeonggung-ro, Jongno-gu, Seoul", icon: Utensils, location: "Gwangjang Market" },
-        { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞 或 弘大", icon: Users, location: "Seongsu-dong, Seongdong-gu, Seoul" },
-        { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 聖誕裝飾", desc: "觀賞外牆燈光秀。", icon: Camera, location: "63 Sogong-ro, Jung-gu, Seoul" },
-        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川首爾燈節", note: "散步", desc: "沿著清溪川欣賞燈飾。", icon: Gift, location: "1 Cheonggyecheon-ro, Jongno-gu, Seoul" },
+        { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具街", note: "東大門", desc: "批發市場挖寶。", icon: ShoppingBag, location: "36 Jong-ro 52-gil, Jongno-gu, Seoul" },
+        { id: 602, time: "12:30", type: "food", title: "廣藏市場 (午餐)", note: "必吃三寶", price: "約 ₩15,000 - ₩25,000", rating: 4.1, address: "88 Changgyeonggung-ro, Jongno-gu, Seoul", icon: Utensils, location: "Gwangjang Market" },
+        { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞", icon: Users, location: "Seongsu-dong, Seongdong-gu, Seoul" },
+        { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 聖誕裝飾", icon: Camera, location: "63 Sogong-ro, Jung-gu, Seoul" },
+        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川首爾燈節", note: "散步", icon: Gift, location: "1 Cheonggyecheon-ro, Jongno-gu, Seoul" },
         { id: 606, time: "19:30", type: "food", title: "晚餐：陳玉華一隻雞", note: "東大門", price: "約 ₩15,000 - ₩22,000", rating: 4.2, address: "18 Jong-ro 40ga-gil, Jongno-gu, Seoul", icon: Utensils, location: "Jinokhwa Halmae Wonjo Dakhanmari" },
       ]
     },
@@ -239,13 +239,13 @@ const SEOUL_DATA = {
       date: "12/27 (六)", 
       weather: "sunny",
       items: [
-        { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李 (弘大站)", icon: Moon, location: "Hongik University Station" },
-        { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "必吃：炸雞丁、可樂餅。買伴手禮。", icon: ShoppingBag, location: "14 Poeun-ro 6-gil, Mapo-gu, Seoul" },
-        { id: 703, time: "12:00", type: "food", title: "午餐：酥脆馬車炸豬排", note: "市場必吃", price: "約 ₩10,000 - ₩15,000", rating: 4.4, address: "39 Mangwon-ro 8-gil, Mapo-gu, Seoul", icon: Utensils, location: "Basak Macha" },
-        { id: 704, time: "13:00", type: "food", title: "Ugly Bakery", note: "望遠洞咖啡廳", price: "約 ₩8,000 - ₩15,000", rating: 4.0, address: "73 World Cup-ro 13-gil, Mapo-gu, Seoul", icon: Coffee, location: "Ugly Bakery" },
+        { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李", desc: "建議弘大站 RAON/T-Luggage。", icon: Moon, location: "Hongik University Station" },
+        { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "最後採買", icon: ShoppingBag, location: "14 Poeun-ro 6-gil, Mapo-gu, Seoul" },
+        { id: 703, time: "12:00", type: "food", title: "午餐：酥脆馬車", note: "炸豬排", price: "約 ₩10,000 - ₩15,000", rating: 4.4, address: "39 Mangwon-ro 8-gil, Mapo-gu, Seoul", icon: Utensils, location: "Basak Macha" },
+        { id: 704, time: "13:00", type: "food", title: "Ugly Bakery", note: "望遠洞", price: "約 ₩8,000 - ₩15,000", rating: 4.0, address: "73 World Cup-ro 13-gil, Mapo-gu, Seoul", icon: Coffee, location: "Ugly Bakery" },
         { id: 705, time: "15:30", type: "transport", title: "取行李", note: "弘大站", icon: MapPin, location: "Hongik University Station" },
-        { id: 706, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", icon: Train, location: "Incheon International Airport" },
-        { id: 707, time: "17:15", type: "transport", title: "抵達機場", note: "登機/退稅", icon: CheckCircle2, location: "Incheon International Airport" },
+        { id: 706, time: "16:00", type: "transport", title: "前往機場", note: "AREX", desc: "請搭快線避開塞車。", icon: Train, location: "Incheon International Airport" },
+        { id: 707, time: "17:15", type: "transport", title: "機場報到", note: "退稅/免稅店", icon: CheckCircle2, location: "Incheon International Airport" },
         { id: 708, time: "19:45", type: "transport", title: "搭機返台 (BR159)", note: "21:40 抵達桃園", icon: Plane, location: "Incheon International Airport" },
       ]
     }
