@@ -5,16 +5,17 @@ import {
   Wallet, ArrowRightLeft, Plus, X, ArrowRight, Umbrella, Car, Snowflake, 
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
   Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
-  AlertCircle, Sparkles, Search, Star, ThumbsUp, AlertTriangle, MessageCircle
+  AlertCircle, Sparkles, Search, Star, ThumbsUp, AlertTriangle, MessageCircle,
+  Map, Info
 } from 'lucide-react';
 
 // --- 1. 資料庫區 (Data Layer) ---
 
 const TRIP_DATA = {
   id: 'seoul_2025', 
-  password: "2024", // 設定密碼，若留空 "" 則直接進入
+  password: "2024", 
   title: "冬日首爾聖誕之旅 🎄",
-  subtitle: "滑雪、美食與聖誕燈飾的浪漫行",
+  subtitle: "滑雪、美食與聖誕燈飾",
   dates: "2025.12.21 - 2025.12.27", 
   budget: 60000,
   coverImage: "https://images.unsplash.com/photo-1542044896530-05d85be9b11a?q=80&w=2000&auto=format&fit=crop", 
@@ -78,7 +79,7 @@ const TRIP_DATA = {
           icon: Utensils, 
           location: "Hongdae Shopping Street" 
         },
-        { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "Hongdae Nanta Theatre" },
+        { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "29 Yanghwa-ro 16-gil, Mapo-gu, Seoul" },
         { 
           id: 106, 
           time: "15:30", 
@@ -97,7 +98,7 @@ const TRIP_DATA = {
           note: "推薦一：老字號燒肉", 
           desc: "弘大 25 年老店，招牌是口感 Q 彈的豬頰肉，比五花肉清爽不油膩，價格親民。\n必點：豬頰肉、五花肉。", 
           price: "約 ₩15,000 - ₩25,000",
-          rating: 4.6,
+          rating: 4.3,
           address: "126 Eoulmadang-ro, Mapo-gu, Seoul",
           icon: Utensils, 
           location: "Tong Tong Dwaeji" 
@@ -150,42 +151,48 @@ const TRIP_DATA = {
       weather: "sunny",
       items: [
         { id: 201, time: "09:00", type: "transport", title: "包車出發", note: "民宿門口集合", desc: "前往江華島一日遊。", icon: Car, location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" },
-        { id: 202, time: "10:30", type: "sightseeing", title: "江華島 Luge", note: "斜坡滑車", desc: "刺激好玩！", icon: Users, location: "Ganghwa Seaside Resort Luge" },
+        { id: 202, time: "10:30", type: "sightseeing", title: "江華島 Luge", note: "斜坡滑車", desc: "刺激好玩！", icon: Users, location: "4-15 Seondu-ri, Gilsang-myeon, Ganghwa-gun, Incheon" },
         { 
           id: 203, 
           time: "12:30", 
           type: "food", 
-          title: "午餐：山塘韓定食", 
+          title: "午餐：山塘韓定食 (산당)", 
           note: "江華島特色", 
           desc: "精緻的韓式定食料理，包含多樣小菜與主食。",
           price: "約 ₩20,000 - ₩30,000",
+          rating: 4.0,
+          address: "186-19 Cheoljongsijang-gil, Yangsa-myeon, Ganghwa-gun, Incheon", 
           icon: Utensils, 
           location: "Sandang Ganghwa" 
         },
-        { id: 204, time: "13:30", type: "sightseeing", title: "小倉織物體驗館", note: "手帕蓋章 DIY", icon: Gift, location: "Sochang Experience Center" },
+        { id: 204, time: "13:30", type: "sightseeing", title: "小倉織物體驗館", note: "手帕蓋章 DIY", icon: Gift, location: "8 Nammunan-gil 20beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon" },
         { 
           id: 205, 
           time: "14:30", 
           type: "food", 
-          title: "朝陽紡織咖啡廳", 
+          title: "朝陽紡織咖啡廳 (조양방직)", 
           note: "網美打卡點", 
           desc: "必訪的復古美術館風格咖啡廳。飲料與蛋糕價格稍高。",
           price: "約 ₩10,000 - ₩18,000",
+          rating: 4.5,
+          address: "12 Hyangnamu-gil 5beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon",
           icon: Coffee, 
           location: "Joyang Bangjik" 
         },
-        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", desc: "眺望北韓景觀。", icon: MapPin, location: "Aegibong Peace Eco Park" },
+        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", desc: "眺望北韓景觀。", icon: MapPin, location: "289 Pyeonghwagongwon-ro, Wolgot-myeon, Gimpo-si, Gyeonggi-do" },
         { id: 207, time: "19:00", type: "transport", title: "返回弘大/新村", note: "下車用餐", icon: Car, location: "Sinchon Station" },
         { 
           id: 208, 
           time: "19:30", 
           type: "food", 
-          title: "晚餐：暖身鍋物", 
-          note: "一隻雞 或 部隊鍋", 
-          desc: "消除疲勞，推薦孔陵一隻雞或新村部隊鍋。", 
-          price: "約 ₩15,000 - ₩20,000",
+          title: "晚餐：孔陵一隻雞 (공릉닭한마리)", 
+          note: "暖身鍋物", 
+          desc: "消除疲勞，清淡鮮美，最後的雞蛋粥必吃。", 
+          price: "約 ₩15,000 - ₩22,000",
+          rating: 4.4,
+          address: "54 Yonsei-ro 2-gil, Seodaemun-gu, Seoul",
           icon: Utensils, 
-          location: "Sinchon" 
+          location: "Gongneung Dakhanmari Sinchon" 
         },
       ]
     },
@@ -196,19 +203,22 @@ const TRIP_DATA = {
       weather: "snow",
       items: [
         { id: 301, time: "07:30", type: "transport", title: "滑雪團集合", note: "KKday 行程 (弘大)", desc: "約 07:00-08:00 集合，請依憑證為準。", icon: Car, location: "Hongik University Station Exit 8" },
-        { id: 302, time: "全天", type: "sightseeing", title: "芝山森林滑雪渡假村", note: "滑雪體驗", icon: Snowflake, location: "Jisan Forest Resort" },
+        { id: 302, time: "全天", type: "sightseeing", title: "芝山森林滑雪渡假村", note: "滑雪體驗", icon: Snowflake, location: "267 Jisan-ro, Majang-myeon, Icheon-si, Gyeonggi-do" },
         { id: 303, time: "17:30", type: "transport", title: "返回首爾", note: "約 18:00 抵達弘大", icon: Car, location: "Hongik University Station" },
         { 
           id: 304, 
           time: "晚上", 
           type: "food", 
-          title: "晚餐：韓國烤肉", 
+          title: "晚餐：胖胖豬頰肉 (통통돼지뽈살)", 
           note: "三層肉/韓牛", 
-          desc: "滑雪消耗大，建議吃好一點補充體力。", 
+          desc: "滑雪消耗大，建議吃好一點補充體力。(若Day1沒吃，這天可以來)", 
           price: "約 ₩25,000 - ₩45,000",
+          rating: 4.3,
+          address: "126 Eoulmadang-ro, Mapo-gu, Seoul",
           icon: Utensils, 
-          location: "Hongdae BBQ Street" 
+          location: "Tong Tong Dwaeji" 
         },
+        { id: 308, time: "20:30", type: "sightseeing", title: "舒壓按摩", note: "The Foot Shop", desc: "緩解滑雪後的肌肉痠痛。", icon: Moon, location: "198 Donggyo-ro, Mapo-gu, Seoul" },
       ]
     },
     {
@@ -218,7 +228,7 @@ const TRIP_DATA = {
       weather: "snow",
       items: [
         { id: 401, time: "09:00", type: "transport", title: "前往三成站", note: "地鐵 2號線", desc: "弘大 ➔ 三成站 (直通 COEX Mall)。", icon: Train, location: "Samseong Station" },
-        { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "欣賞發光書牆與聖誕裝置藝術，拍照打卡。", icon: Camera, location: "Starfield Library" },
+        { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "欣賞發光書牆與聖誕裝置藝術，拍照打卡。", icon: Camera, location: "513 Yeongdong-daero, Gangnam-gu, Seoul" },
         { 
           id: 403, 
           time: "11:30", 
@@ -240,18 +250,20 @@ const TRIP_DATA = {
           icon: Train, 
           location: "Jamsil Station" 
         },
-        { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "下午入場。室內探險世界 + 室外魔幻島。可玩到晚上看遊行。", icon: Castle, location: "Lotte World" },
-        { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾夜景", icon: Gift, location: "Seokchon Lake" },
+        { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "下午入場。室內探險世界 + 室外魔幻島。可玩到晚上看遊行。", icon: Castle, location: "240 Olympic-ro, Songpa-gu, Seoul" },
+        { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾夜景", icon: Gift, location: "47 Jamsil-dong, Songpa-gu, Seoul" },
         { 
           id: 407, 
           time: "20:30", 
           type: "food", 
-          title: "平安夜晚餐：松理團路", 
-          note: "文青美食街", 
-          desc: "Godosik 烤肉或 Mippeu Dong。平安夜人多，預算建議拉高。", 
+          title: "平安夜晚餐：Godosik", 
+          note: "松理團路", 
+          desc: "高人氣烤肉店，專人代烤。平安夜人多，預算建議拉高。", 
           price: "約 ₩25,000 - ₩50,000",
+          rating: 4.6,
+          address: "101-1 Songpa-dong, Songpa-gu, Seoul",
           icon: Utensils, 
-          location: "Songnidan-gil" 
+          location: "Godosik Jamsil" 
         },
         { id: 408, time: "22:00", type: "transport", title: "返回弘大", note: "地鐵 2號線直達", icon: Train, location: "Hongik University Station" },
       ]
@@ -263,8 +275,8 @@ const TRIP_DATA = {
       weather: "snow",
       items: [
         { id: 501, time: "09:30", type: "transport", title: "前往光化門", note: "地鐵/公車", icon: Train, location: "Gwanghwamun Station" },
-        { id: 502, time: "10:00", type: "sightseeing", title: "光化門", note: "守門將換崗儀式", icon: Users, location: "Gwanghwamun" },
-        { id: 503, time: "10:30", type: "sightseeing", title: "景福宮", note: "參觀", icon: Castle, location: "Gyeongbokgung Palace" },
+        { id: 502, time: "10:00", type: "sightseeing", title: "光化門", note: "守門將換崗儀式", icon: Users, location: "172 Sejong-daero, Jongno-gu, Seoul" },
+        { id: 503, time: "10:30", type: "sightseeing", title: "景福宮", note: "參觀", icon: Castle, location: "161 Sajik-ro, Jongno-gu, Seoul" },
         { 
           id: 504, 
           time: "12:30", 
@@ -273,22 +285,25 @@ const TRIP_DATA = {
           note: "銅錢便當", 
           desc: "用古銅錢換購市場小吃，體驗傳統樂趣。", 
           price: "約 ₩10,000 - ₩15,000",
+          rating: 4.3,
+          address: "18 Jahamun-ro 15-gil, Jongno-gu, Seoul",
           icon: Utensils, 
           location: "Tongin Market" 
         },
-        { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "韓屋咖啡廳/文創", icon: Coffee, location: "Seochon" },
-        { id: 506, time: "17:00", type: "sightseeing", title: "漫步回光化門", note: "前往廣場", icon: MapPin, location: "Gwanghwamun Square" },
-        { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "Seoul Lantern Festival", desc: "感受聖誕氣氛。", icon: Gift, location: "Gwanghwamun Square" },
+        { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "韓屋咖啡廳/文創", icon: Coffee, location: "Seochon Village, Jongno-gu, Seoul" },
+        { id: 506, time: "17:00", type: "sightseeing", title: "漫步回光化門", note: "前往廣場", icon: MapPin, location: "172 Sejong-daero, Jongno-gu, Seoul" },
+        { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "Seoul Lantern Festival", desc: "感受聖誕氣氛。", icon: Gift, location: "172 Sejong-daero, Jongno-gu, Seoul" },
         { 
           id: 508, 
           time: "20:00", 
           type: "food", 
-          title: "聖誕晚餐", 
+          title: "聖誕晚餐：世宗村飲食文化街", 
           note: "鐘路美食街", 
           desc: "聖誕節聚餐，建議避開人潮最多的主街，往鐘路巷弄尋找。", 
           price: "約 ₩30,000 - ₩60,000",
+          address: "Jahamun-ro 1-gil, Jongno-gu, Seoul",
           icon: Utensils, 
-          location: "Gwanghwamun Food Street" 
+          location: "Sejong Village Food Culture Street" 
         },
       ]
     },
@@ -298,7 +313,7 @@ const TRIP_DATA = {
       date: "12/26 (五)", 
       weather: "sunny",
       items: [
-        { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "批發市場挖寶。", icon: ShoppingBag, location: "Changsin-dong Stationery Toy Market" },
+        { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "批發市場挖寶。", icon: ShoppingBag, location: "36 Jong-ro 52-gil, Jongno-gu, Seoul" },
         { 
           id: 602, 
           time: "12:30", 
@@ -307,22 +322,26 @@ const TRIP_DATA = {
           note: "綠豆餅/生牛肉/麻藥飯捲", 
           desc: "韓國傳統市場美食天堂。生牛肉是必點！", 
           price: "約 ₩15,000 - ₩25,000",
+          rating: 4.1,
+          address: "88 Changgyeonggung-ro, Jongno-gu, Seoul",
           icon: Utensils, 
           location: "Gwangjang Market" 
         },
-        { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞 或 弘大", icon: Users, location: "Seongsu-dong" },
-        { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 聖誕裝飾", desc: "觀賞外牆燈光秀。", icon: Camera, location: "Shinsegae Department Store Myeongdong" },
-        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川首爾燈節", note: "散步", desc: "沿著清溪川欣賞燈飾。", icon: Gift, location: "Cheonggyecheon Stream" },
+        { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞 或 弘大", icon: Users, location: "Seongsu-dong, Seongdong-gu, Seoul" },
+        { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 聖誕裝飾", desc: "觀賞外牆燈光秀。", icon: Camera, location: "63 Sogong-ro, Jung-gu, Seoul" },
+        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川首爾燈節", note: "散步", desc: "沿著清溪川欣賞燈飾。", icon: Gift, location: "1 Cheonggyecheon-ro, Jongno-gu, Seoul" },
         { 
           id: 606, 
           time: "19:30", 
           type: "food", 
-          title: "晚餐：東大門一隻雞", 
-          note: "陳玉華一隻雞 (或其他)", 
+          title: "晚餐：陳玉華一隻雞 (진옥화할매원조닭한마리)", 
+          note: "東大門", 
           desc: "就在燈節附近，湯頭鮮美，天冷必吃。", 
           price: "約 ₩15,000 - ₩22,000",
+          rating: 4.2,
+          address: "18 Jong-ro 40ga-gil, Jongno-gu, Seoul",
           icon: Utensils, 
-          location: "Dongdaemun Chicken Alley" 
+          location: "Jinokhwa Halmae Wonjo Dakhanmari" 
         },
       ]
     },
@@ -333,28 +352,32 @@ const TRIP_DATA = {
       weather: "sunny",
       items: [
         { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李 (弘大站)", desc: "建議寄放在弘大站 (RAON/T-Luggage)。", icon: Moon, location: "Hongik University Station" },
-        { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "必吃：炸雞丁、可樂餅。買伴手禮。", icon: ShoppingBag, location: "Mangwon Market" },
+        { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "必吃：炸雞丁、可樂餅。買伴手禮。", icon: ShoppingBag, location: "14 Poeun-ro 6-gil, Mapo-gu, Seoul" },
         { 
           id: 703, 
           time: "12:00", 
           type: "food", 
-          title: "午餐：酥脆馬車炸豬排", 
+          title: "午餐：酥脆馬車炸豬排 (바삭마차)", 
           note: "市場必吃", 
           desc: "各種口味的手工炸豬排，也有棉花糖冰淇淋。", 
           price: "約 ₩10,000 - ₩15,000",
+          rating: 4.4,
+          address: "39 Mangwon-ro 8-gil, Mapo-gu, Seoul",
           icon: Utensils, 
-          location: "Mangwon Market Food" 
+          location: "Basak Macha" 
         },
         { 
           id: 704, 
           time: "13:00", 
           type: "food", 
-          title: "望遠洞咖啡廳", 
-          note: "悠閒午後", 
-          desc: "醜麵包 (Ugly Bakery) 或其他文青咖啡廳。", 
+          title: "Ugly Bakery", 
+          note: "望遠洞咖啡廳", 
+          desc: "爆漿鮮奶油麵包名店，需排隊。", 
           price: "約 ₩8,000 - ₩15,000",
+          rating: 4.0,
+          address: "73 World Cup-ro 13-gil, Mapo-gu, Seoul",
           icon: Coffee, 
-          location: "Mangwon-dong" 
+          location: "Ugly Bakery" 
         },
         { id: 705, time: "15:30", type: "transport", title: "取行李", note: "弘大站", icon: MapPin, location: "Hongik University Station" },
         { id: 706, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週六傍晚易塞車，請搭地鐵/快線。", icon: Train, location: "Incheon International Airport" },
@@ -485,14 +508,33 @@ const TripLoginModal = ({ trip, onUnlock }) => {
   );
 };
 
-// 2.4 新增：餐點詳情頁 (Food Detail Modal)
-const FoodDetailModal = ({ item, onClose }) => {
+// 2.4 新增：餐點詳情頁 (Item Detail Modal) - 升級為通用詳情頁
+const ItemDetailModal = ({ item, onClose }) => {
   if (!item) return null;
 
+  const getGeminiQuery = () => {
+    if (item.type === 'food') {
+      return `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
+    } else if (item.type === 'sightseeing') {
+      return `請介紹首爾景點：${item.title}。請提供：1. 景點特色與必看亮點 2. 建議停留時間 3. 交通方式與附近順遊景點 4. 適合家庭/親子的程度？`;
+    } else if (item.type === 'hotel') {
+      return `請分析首爾住宿：${item.title}。請提供：1. 網友綜合評價 (優缺點) 2. 距離地鐵站/機場巴士的便利性 3. 附近便利商店與美食 4. 是否適合家庭入住？`;
+    } else if (item.type === 'transport') {
+      return `請問在首爾如何搭乘：${item.title} (${item.note})？請提供：1. 搭乘位置與路線 2. 時刻表或班次頻率 3. 票價與支付方式 (T-money?)`;
+    } else {
+      return `請介紹：${item.title} (${item.location || '首爾'})。請提供詳細的旅遊資訊、評價以及注意事項。`;
+    }
+  };
+
   const handleAskGemini = () => {
-    const query = `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
+    const query = getGeminiQuery();
     const url = `https://gemini.google.com/app?q=${encodeURIComponent(query)}`;
     window.open(url, '_blank');
+  };
+
+  const handleGoogleSearch = () => {
+    const query = `${item.title} ${item.location || '首爾'} 評價`;
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
   };
 
   const handleGoogleMap = () => {
@@ -501,13 +543,44 @@ const FoodDetailModal = ({ item, onClose }) => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
   };
 
+  const getAiConfig = (type) => {
+     switch (type) {
+        case 'food':
+           return {
+             title: "AI 探店助手",
+             prompts: ["必吃推薦", "人均預算", "避雷 / 貼心提醒"],
+             icons: [<ThumbsUp size={14}/>, <Wallet size={14}/>, <AlertTriangle size={14}/>]
+           };
+        case 'sightseeing':
+           return {
+             title: "AI 景點導覽",
+             prompts: ["特色亮點", "建議停留", "參觀貼士"],
+             icons: [<Star size={14}/>, <Clock size={14}/>, <AlertCircle size={14}/>]
+           };
+        case 'hotel':
+           return {
+             title: "AI 住宿分析",
+             prompts: ["住宿評價", "周邊機能", "入住須知"],
+             icons: [<Star size={14}/>, <MapPin size={14}/>, <AlertCircle size={14}/>]
+           };
+        default:
+           return {
+             title: "AI 旅遊助手",
+             prompts: ["相關資訊", "網友評價", "注意事項"],
+             icons: [<Search size={14}/>, <MessageCircle size={14}/>, <AlertCircle size={14}/>]
+           };
+     }
+  }
+
+  const aiConfig = getAiConfig(item.type);
+
   return (
     <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl relative h-[85vh] md:h-auto md:max-h-[85vh] flex flex-col">
         {/* Header Image Area */}
         <div className="h-56 bg-stone-200 relative shrink-0">
           <img 
-            src={`https://source.unsplash.com/800x600/?korean,food,${item.title}`} 
+            src={`https://source.unsplash.com/800x600/?korean,${item.type},${item.title}`} 
             onError={(e) => e.target.src = "https://images.unsplash.com/photo-1580651315530-69c8e0026377?q=80&w=2070&auto=format&fit=crop"}
             alt={item.title} 
             className="w-full h-full object-cover"
@@ -519,7 +592,7 @@ const FoodDetailModal = ({ item, onClose }) => {
           
           <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
              <div className="flex gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded-md bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider">Food</span>
+                <span className={`px-2 py-0.5 rounded-md text-white text-[10px] font-bold uppercase tracking-wider ${item.type === 'food' ? 'bg-orange-500' : 'bg-blue-500'}`}>{item.type}</span>
                 {item.rating && (
                   <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1">
                      <Star size={10} className="fill-current text-yellow-400"/> {item.rating}
@@ -527,7 +600,7 @@ const FoodDetailModal = ({ item, onClose }) => {
                 )}
              </div>
             <h2 className="text-3xl font-bold text-white mb-1 shadow-sm">{item.title}</h2>
-            <p className="text-white/80 text-sm flex items-center gap-1 font-medium"><MapPin size={14}/> {item.location || '首爾'}</p>
+            <p className="text-white/80 text-sm flex items-center gap-1 font-medium truncate max-w-full"><MapPin size={14} className="shrink-0"/> {item.address || item.location || '首爾'}</p>
           </div>
         </div>
 
@@ -536,15 +609,26 @@ const FoodDetailModal = ({ item, onClose }) => {
           
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <button onClick={handleGoogleMap} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-blue-200 hover:text-blue-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
+             <button onClick={handleGoogleSearch} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-purple-200 hover:text-purple-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base">
+              <Search size={18} className="text-purple-500"/> Google 搜尋
+            </button>
+            <button onClick={handleGoogleMap} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-blue-200 hover:text-blue-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base">
               <MapPin size={18} className="text-blue-500"/> Google 導航
             </button>
-            <button onClick={() => window.open(`https://www.instagram.com/explore/tags/${item.title}/`, '_blank')} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-pink-200 hover:text-pink-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
-              <Camera size={18} className="text-pink-500"/> IG 美食照
-            </button>
+            {/* Conditional Instagram button for visual items */}
+            {['food', 'sightseeing'].includes(item.type) && (
+                 <button onClick={() => window.open(`https://www.instagram.com/explore/tags/${item.title}/`, '_blank')} className="col-span-2 p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-pink-200 hover:text-pink-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base">
+                 <Camera size={18} className="text-pink-500"/> Instagram 美照
+                </button>
+            )}
+            {item.link && (
+               <button onClick={() => window.open(item.link, '_blank')} className="col-span-2 p-3 rounded-2xl bg-stone-800 text-white hover:bg-stone-700 flex items-center justify-center gap-2 font-bold shadow-sm transition-all text-sm md:text-base">
+                 <Globe size={18}/> 查看相關連結
+               </button>
+            )}
           </div>
 
-          {/* Gemini AI Card */}
+          {/* AI Info Card */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-100 relative overflow-hidden mb-6 group">
             <div className="absolute top-0 right-0 p-0 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Sparkles size={120} className="text-indigo-600 -mr-4 -mt-4"/>
@@ -553,33 +637,33 @@ const FoodDetailModal = ({ item, onClose }) => {
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 text-indigo-700 font-bold">
                     <div className="p-1.5 bg-indigo-100 rounded-lg"><Sparkles size={16} /></div>
-                    <span>AI 探店助手</span>
+                    <span>{aiConfig.title}</span>
                 </div>
                 <span className="text-[10px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded-full">Gemini Powered</span>
             </div>
             
             <div className="space-y-4">
                <div className="flex gap-3 items-start">
-                   <div className="mt-0.5 p-1 bg-orange-100 rounded text-orange-600 shrink-0"><ThumbsUp size={14}/></div>
+                   <div className="mt-0.5 p-1 bg-orange-100 rounded text-orange-600 shrink-0">{aiConfig.icons[0]}</div>
                    <div>
-                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">必吃推薦</span>
-                       <p className="text-sm text-stone-700 font-medium leading-relaxed">{item.desc || '尚未載入推薦菜色，請點擊下方按鈕詢問 AI。'}</p>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">{aiConfig.prompts[0]}</span>
+                       <p className="text-sm text-stone-700 font-medium leading-relaxed">{item.desc || '尚未載入資訊，請點擊下方按鈕詢問 AI。'}</p>
                    </div>
                </div>
 
                <div className="flex gap-3 items-start">
-                   <div className="mt-0.5 p-1 bg-green-100 rounded text-green-600 shrink-0"><Wallet size={14}/></div>
+                   <div className="mt-0.5 p-1 bg-green-100 rounded text-green-600 shrink-0">{aiConfig.icons[1]}</div>
                    <div>
-                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">人均預算</span>
-                       <p className="text-sm text-stone-700 font-medium">{item.price || "約 ₩15,000 - ₩30,000 (預估)"}</p>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">{aiConfig.prompts[1]}</span>
+                       <p className="text-sm text-stone-700 font-medium">{item.price || item.note || "暫無資料"}</p>
                    </div>
                </div>
 
                <div className="flex gap-3 items-start">
-                   <div className="mt-0.5 p-1 bg-red-100 rounded text-red-600 shrink-0"><AlertTriangle size={14}/></div>
+                   <div className="mt-0.5 p-1 bg-red-100 rounded text-red-600 shrink-0">{aiConfig.icons[2]}</div>
                    <div>
-                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">避雷 / 貼心提醒</span>
-                       <p className="text-sm text-stone-700 font-medium">用餐尖峰時段可能需要排隊。建議先確認是否可預約。</p>
+                       <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">{aiConfig.prompts[2]}</span>
+                       <p className="text-sm text-stone-700 font-medium">建議事先確認營業時間與人潮狀況。</p>
                    </div>
                </div>
             </div>
@@ -589,7 +673,7 @@ const FoodDetailModal = ({ item, onClose }) => {
                 onClick={handleAskGemini}
                 className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                 >
-                <MessageCircle size={16} /> 詢問 Gemini 詳細評價
+                <MessageCircle size={16} /> 詢問 Gemini 詳細資訊
                 </button>
                 <p className="text-[10px] text-center text-stone-300 mt-2">點擊將開啟 Google Gemini 進行即時分析</p>
             </div>
@@ -612,7 +696,7 @@ const TripDashboard = ({ tripData }) => {
   const [packingList, setPackingList] = useState(tripData.packingList || []);
   const [expenses, setExpenses] = useState([{ id: 1, title: '預付公基金', amount: 3000, payerId: 1, beneficiaryIds: [1, 2], splitWeights: {1: 1, 2: 1}, date: '出發前' }]);
   const [budget, setBudget] = useState(tripData.budget || 50000);
-  const [selectedFoodItem, setSelectedFoodItem] = useState(null); // For Modal
+  const [selectedItem, setSelectedItem] = useState(null); // Changed to generic item
 
   // UI State
   const [isEditingBudget, setIsEditingBudget] = useState(false);
@@ -652,16 +736,14 @@ const TripDashboard = ({ tripData }) => {
 
   const handleNavigation = (location, title) => {
     const query = location || title;
+    // 使用 Google Maps Web Search API，這在手機上會嘗試開啟 App，電腦上開網頁
     const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     window.open(url, '_blank');
   };
 
   const handleItemClick = (item) => {
-    if (item.type === 'food') {
-      setSelectedFoodItem(item);
-    } else if (item.location) {
-      handleNavigation(item.location, item.title);
-    }
+    // Open modal for ALL items now
+    setSelectedItem(item);
   };
 
   const handleAddExpense = () => {
@@ -824,6 +906,7 @@ const TripDashboard = ({ tripData }) => {
                     {currentDayData.weather === 'snow' ? <span className="text-blue-400">❄️ 下雪</span> : <><Sun size={14} className="text-amber-400"/> 晴朗</>}
                   </div>
                 </div>
+                
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                   {TRIP_DATA.days.map((d) => (
                     <button key={d.day} onClick={() => setActiveDay(d.day)} className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeDay === d.day ? "bg-stone-900 text-white shadow-md scale-105" : "bg-stone-100 text-stone-400 hover:bg-stone-200"}`}>Day {d.day}</button>
