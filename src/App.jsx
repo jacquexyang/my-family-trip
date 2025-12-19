@@ -42,7 +42,7 @@ const TRIP_REGISTRY = [
     subtitle: "滑雪、美食與聖誕燈飾",
     dates: "2025.12.21 - 2025.12.27",
     coverImage: "https://images.unsplash.com/photo-1542044896530-05d85be9b11a?q=80&w=2000&auto=format&fit=crop",
-    defaultPassword: "2024" // 僅用於首次自動初始化資料庫，之後請在 Firebase 修改
+    defaultPassword: "2024" // 僅用於首次自動初始化資料庫
   },
   {
     id: 'cruise_2025',
@@ -57,34 +57,28 @@ const TRIP_REGISTRY = [
 // 1.2 首爾行程內容
 const SEOUL_DATA = {
   budget: 60000,
-  participants: [
+  // 預設參與者 (若資料庫為空時使用)
+  defaultParticipants: [
     { id: 1, name: "Howard家", avatar: "https://i.pravatar.cc/150?u=1" },
     { id: 2, name: "楓家", avatar: "https://i.pravatar.cc/150?u=5" },
   ],
-  packingList: [
-    { category: "證件與錢財", items: [
-      { id: 'p1', name: "護照 (效期6個月以上)", checked: false },
-      { id: 'p2', name: "韓幣 / 信用卡 / WOWPASS", checked: false },
-      { id: 'p3', name: "網卡 / E-sim / Wifi機", checked: false },
-      { id: 'p4', name: "機票 / 住宿憑證", checked: false },
-      { id: 'p5', name: "T-money 交通卡 (建議先儲值)", checked: false }
-    ]},
-    { category: "電子產品", items: [
-      { id: 'e1', name: "轉接頭 (韓國雙圓孔 4.8mm)", checked: false },
-      { id: 'e2', name: "行動電源", checked: false },
-      { id: 'e3', name: "充電線 (手機/手錶)", checked: false }
-    ]},
-    { category: "衣物 (冬季)", items: [
-      { id: 'c1', name: "發熱衣 / 發熱褲", checked: false },
-      { id: 'c2', name: "羽絨外套 / 大衣", checked: false },
-      { id: 'c3', name: "圍巾 / 毛帽 / 手套 (滑雪必備)", checked: false },
-      { id: 'c4', name: "好走的鞋子", checked: false }
-    ]},
-    { category: "個人用品", items: [
-      { id: 't1', name: "牙刷牙膏 (韓國環保不提供)", checked: false },
-      { id: 't2', name: "個人藥品 (感冒/腸胃/暈車)", checked: false },
-      { id: 't3', name: "保養品 / 護手霜 / 暖暖包", checked: false }
-    ]}
+  // 預設清單 (若資料庫為空時使用)
+  defaultPackingList: [
+    { category: "證件與錢財", name: "護照 (效期6個月以上)" },
+    { category: "證件與錢財", name: "韓幣 / 信用卡 / WOWPASS" },
+    { category: "證件與錢財", name: "網卡 / E-sim / Wifi機" },
+    { category: "證件與錢財", name: "機票 / 住宿憑證" },
+    { category: "證件與錢財", name: "T-money 交通卡 (建議先儲值)" },
+    { category: "電子產品", name: "轉接頭 (韓國雙圓孔 4.8mm)" },
+    { category: "電子產品", name: "行動電源" },
+    { category: "電子產品", name: "充電線 (手機/手錶)" },
+    { category: "衣物 (冬季)", name: "發熱衣 / 發熱褲" },
+    { category: "衣物 (冬季)", name: "羽絨外套 / 大衣" },
+    { category: "衣物 (冬季)", name: "圍巾 / 毛帽 / 手套" },
+    { category: "衣物 (冬季)", name: "好走的鞋子" },
+    { category: "個人用品", name: "牙刷牙膏 (韓國環保不提供)" },
+    { category: "個人用品", name: "個人藥品 (感冒/腸胃)" },
+    { category: "個人用品", name: "保養品 / 護手霜" }
   ],
   days: [
     {
@@ -217,7 +211,8 @@ const SEOUL_DATA = {
           icon: Coffee, 
           location: "Joyang Bangjik" 
         },
-        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", desc: "眺望北韓景觀。", icon: MapPin, location: "289 Pyeonghwagongwon-ro, Wolgot-myeon, Gimpo-si, Gyeonggi-do" },
+        { id: 2055, time: "15:45", type: "transport", title: "⚠️ 關鍵時刻：移動", note: "必須準時離開", desc: "前往愛妓峰 (約30分)。因是軍事管制區，有嚴格入場時間限制。", icon: AlertCircle, location: "Ganghwa-gun" },
+        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", desc: "🔴 務必攜帶實體護照！冬季最後入場通常是 16:30。", icon: MapPin, location: "289 Pyeonghwagongwon-ro, Wolgot-myeon, Gimpo-si, Gyeonggi-do" },
         { id: 207, time: "19:00", type: "transport", title: "返回弘大/新村", note: "下車用餐", icon: Car, location: "Sinchon Station" },
         { 
           id: 208, 
@@ -251,7 +246,7 @@ const SEOUL_DATA = {
           note: "三層肉/韓牛", 
           desc: "滑雪消耗大，建議吃好一點補充體力。(若Day1沒吃，這天可以來)", 
           price: "約 ₩25,000 - ₩45,000",
-          rating: 4.6,
+          rating: 4.5,
           address: "126 Eoulmadang-ro, Mapo-gu, Seoul",
           icon: Utensils, 
           location: "Tong Tong Dwaeji" 
@@ -429,7 +424,8 @@ const SEOUL_DATA = {
 // 1.3 郵輪行程內容 (Placeholder)
 const CRUISE_DATA = {
   budget: 100000,
-  participants: [
+  // 預設參與者
+  defaultParticipants: [
     { id: 1, name: "Howard家", avatar: "https://i.pravatar.cc/150?u=1" },
   ],
   days: [
@@ -456,22 +452,22 @@ const Tag = ({ type }) => {
     hotel: "bg-purple-50 text-purple-600 border-purple-100",
     info: "bg-gray-50 text-gray-600 border-gray-100",
   };
-  
   const labelMap = { food: '餐飲', sightseeing: '景點', transport: '交通', hotel: '住宿', info: '資訊' };
-
-  return (
-    <span className={`text-[10px] px-2.5 py-1 rounded-full border font-medium ${styles[type] || "bg-gray-50 text-gray-600"}`}>
-      {labelMap[type] || '其他'}
-    </span>
-  );
+  return <span className={`text-[10px] px-2.5 py-1 rounded-full border font-medium ${styles[type] || "bg-gray-50 text-gray-600"}`}>{labelMap[type] || '其他'}</span>;
 };
 
 // 2.2 記帳邏輯
+// 安全版：防止 participants 為空時崩潰
 const calculateDebts = (expenses, participants) => {
+  if (!participants || participants.length === 0) return [];
+  
   const balances = {};
   participants.forEach(p => balances[p.id] = 0);
 
   expenses.forEach(exp => {
+    // 檢查 payer 是否存在於目前的 participants 中，若無則跳過（可能是舊資料）
+    if (!participants.find(p => p.id === exp.payerId)) return;
+
     const payerId = exp.payerId;
     const amount = parseFloat(exp.amount);
     
@@ -520,11 +516,17 @@ const calculateDebts = (expenses, participants) => {
     
     const amount = Math.min(Math.abs(debtor.amount), creditor.amount);
     
-    transactions.push({
-      from: participants.find(p => p.id === debtor.id),
-      to: participants.find(p => p.id === creditor.id),
-      amount: Math.round(amount)
-    });
+    // 安全檢查：確保找到人
+    const fromPerson = participants.find(p => p.id === debtor.id);
+    const toPerson = participants.find(p => p.id === creditor.id);
+
+    if (fromPerson && toPerson) {
+        transactions.push({
+          from: fromPerson,
+          to: toPerson,
+          amount: Math.round(amount)
+        });
+    }
 
     debtor.amount += amount;
     creditor.amount -= amount;
@@ -741,7 +743,106 @@ const ItemDetailModal = ({ item, onClose }) => {
   );
 };
 
-// 2.5 主行程頁面 (TripDashboard) - Modified to accept tripId
+// 2.6 行程選擇列表 (TripListScreen)
+const TripListScreen = ({ onSelectTrip }) => {
+  return (
+    <div className="w-full min-h-screen bg-[#FDFBF7] p-6 flex flex-col items-center">
+      <div className="w-full max-w-5xl mb-8 mt-4">
+        <h1 className="text-3xl font-bold text-stone-800">我的旅程</h1>
+        <p className="text-stone-400 text-sm mt-1">Ready for your next adventure?</p>
+      </div>
+
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6">
+        {TRIP_REGISTRY.map((trip) => (
+          <div 
+            key={trip.id}
+            onClick={() => onSelectTrip(trip.id)}
+            className="bg-white rounded-3xl shadow-sm border border-stone-100 overflow-hidden cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative h-80 flex flex-col"
+          >
+            <div className="absolute top-4 right-4 z-10 bg-black/30 backdrop-blur-md p-2 rounded-full text-white">
+              <Lock size={14} />
+            </div>
+            <div className="h-48 relative overflow-hidden flex-shrink-0">
+              <img src={trip.coverImage} alt={trip.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+              <div className="absolute bottom-4 left-4 right-4 text-white">
+                <h3 className="font-bold text-xl mb-1 shadow-sm leading-tight">{trip.title}</h3>
+                <p className="text-xs opacity-90 font-medium flex items-center gap-1">
+                  <Calendar size={12} /> {trip.dates.split(' - ')[0]} 起
+                </p>
+              </div>
+            </div>
+            <div className="p-5 flex justify-between items-center bg-white flex-1">
+              <div>
+                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">TRIP</p>
+                <p className="text-sm text-stone-600 line-clamp-1">{trip.subtitle}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-400 group-hover:bg-stone-800 group-hover:text-white transition-all">
+                <ArrowRight size={20} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// 2.7 登入鎖定畫面 (Password Gate)
+const TripLoginScreen = ({ tripInfo, onUnlock, onBack }) => {
+  const [input, setInput] = useState('');
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const docRef = doc(db, 'artifacts', tripInfo.id, 'public', 'config');
+      const docSnap = await getDoc(docRef);
+      
+      let validPassword = "";
+      
+      if (docSnap.exists()) {
+        validPassword = docSnap.data().password;
+      } else {
+        await setDoc(docRef, { password: tripInfo.defaultPassword });
+        validPassword = tripInfo.defaultPassword;
+      }
+
+      if (input === validPassword) {
+        onUnlock();
+      } else {
+        setError(true);
+        setTimeout(() => setError(false), 2000);
+      }
+    } catch (err) {
+      console.error("Auth Error", err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-6">
+      <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl relative text-center border border-stone-100">
+        <button onClick={onBack} className="absolute top-6 left-6 p-2 text-stone-400 hover:text-stone-600 transition-colors"><ChevronLeft size={20} /></button>
+        <div className="flex justify-center mb-6"><div className="bg-stone-100 p-4 rounded-2xl text-stone-700 shadow-inner"><Lock size={32} /></div></div>
+        <h3 className="text-xl font-bold text-stone-800 mb-2">行程已鎖定</h3>
+        <p className="text-sm text-stone-500 mb-6">請輸入「{tripInfo.title}」的通關密語</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="text" inputMode="numeric" pattern="[0-9]*" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Passcode" className="w-full bg-stone-50 border-2 border-stone-100 rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest text-stone-800 focus:outline-none focus:border-stone-800 focus:bg-white transition-all" autoFocus disabled={loading} />
+          <button type="submit" disabled={loading} className="w-full bg-stone-900 text-white rounded-xl py-3 font-bold text-lg hover:bg-stone-800 transition-all shadow-lg active:scale-95 disabled:opacity-50">{loading ? "驗證中..." : "解鎖"}</button>
+        </form>
+        {error && <p className="mt-4 text-red-500 text-sm font-bold animate-pulse flex justify-center gap-1"><X size={16} /> 密碼錯誤</p>}
+      </div>
+    </div>
+  );
+};
+
+// 2.8 主行程介面 (TripDashboard) - Modified to accept tripId
 const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const [activeTab, setActiveTab] = useState('schedule'); 
   const [activeDay, setActiveDay] = useState(1);
@@ -812,9 +913,9 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
            setParticipants(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id })));
         } else {
            // Init default participants if empty
-           if (tripId === 'seoul_2025' && tripData.participants) {
+           if (tripId === 'seoul_2025' && tripData.defaultParticipants) {
                const batch = writeBatch(db);
-               tripData.participants.forEach((p, index) => {
+               tripData.defaultParticipants.forEach((p, index) => {
                    const docRef = doc(partRef);
                    batch.set(docRef, { ...p, id: index + 1, createdAt: serverTimestamp() });
                });
@@ -827,7 +928,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
      signInAnonymously(auth).catch(console.error);
 
      return () => { unsubPacking(); unsubExp(); unsubPart(); };
-  }, [tripData.id]);
+  }, [tripId]); // Removed tripData.id dependency to avoid loop
 
   useEffect(() => {
     if (isAddExpenseOpen && participants.length > 0) {
@@ -843,7 +944,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const handleAddExpense = async () => {
     if (!newExpense.title || !newExpense.amount) return;
     const finalBeneficiaries = newExpense.beneficiaryIds.length > 0 ? newExpense.beneficiaryIds : participants.map(p => p.id);
-    await addDoc(collection(db, 'artifacts', tripData.id, 'public', 'data', 'expenses'), {
+    await addDoc(collection(db, 'artifacts', tripId, 'public', 'data', 'expenses'), {
       title: newExpense.title,
       amount: parseInt(newExpense.amount),
       payerId: parseInt(newExpense.payerId),
@@ -857,13 +958,13 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   };
 
   const handleDeleteExpense = async (id) => {
-    await deleteDoc(doc(db, 'artifacts', tripData.id, 'public', 'data', 'expenses', id));
+    await deleteDoc(doc(db, 'artifacts', tripId, 'public', 'data', 'expenses', id));
   };
 
   const handleAddPerson = async () => {
     if (!newPersonName.trim()) return;
     const newId = participants.length > 0 ? Math.max(...participants.map(p => p.id)) + 1 : 1;
-    await addDoc(collection(db, 'artifacts', tripData.id, 'public', 'data', 'participants'), {
+    await addDoc(collection(db, 'artifacts', tripId, 'public', 'data', 'participants'), {
       id: newId,
       name: newPersonName,
       avatar: `https://i.pravatar.cc/150?u=${newId + 10}`,
@@ -874,11 +975,11 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   };
 
   const handleRemovePerson = async (docId) => {
-    if (docId) await deleteDoc(doc(db, 'artifacts', tripData.id, 'public', 'data', 'participants', docId));
+    if (docId) await deleteDoc(doc(db, 'artifacts', tripId, 'public', 'data', 'participants', docId));
   };
   
   const togglePackingItem = async (cat, itemId) => {
-     const itemRef = doc(db, 'artifacts', tripData.id, 'public', 'data', 'packing-list', itemId);
+     const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
      let currentChecked = false;
      // Find current checked status from local state (which is synced)
      outerLoop: for(let c of packingList) {
@@ -891,7 +992,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
 
   const handleAddPackingItem = async (categoryName) => {
     if (!newItemName.trim()) return;
-    await addDoc(collection(db, 'artifacts', tripData.id, 'public', 'data', 'packing-list'), {
+    await addDoc(collection(db, 'artifacts', tripId, 'public', 'data', 'packing-list'), {
        category: categoryName,
        name: newItemName,
        checked: false,
@@ -902,7 +1003,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   
   const handleShare = () => {
     const url = window.location.href;
-    const text = `✈️ ${tripData.title}\n📅 ${tripData.dates}\n密碼: ${tripData.password}\n連結: ${url}`;
+    const text = `✈️ ${tripInfo.title}\n📅 ${tripInfo.dates}\n密碼: ${tripInfo.defaultPassword}\n連結: ${url}`; // Use tripInfo
     navigator.clipboard.writeText(text);
     setShowShareModal(true);
     setTimeout(() => setShowShareModal(false), 3000);
@@ -954,8 +1055,8 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
           <button onClick={handleShare} className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 text-sm font-medium">{copiedId === 'share-btn' ? <CheckCircle2 size={18} className="text-green-400"/> : <Share2 size={18} />} <span className="hidden md:inline">分享行程</span></button>
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 max-w-7xl mx-auto w-full text-white">
-          <div className="flex items-center gap-2 mb-2 opacity-90 text-sm tracking-widest uppercase font-medium"><span className="bg-white/20 px-2 py-0.5 rounded text-xs backdrop-blur-sm border border-white/10">{tripData.dates.split('-')[0]}</span><span className="hidden md:inline">| {tripData.subtitle}</span></div>
-          <h1 className="text-3xl md:text-6xl font-bold leading-tight drop-shadow-sm mb-4">{tripData.title}</h1>
+          <div className="flex items-center gap-2 mb-2 opacity-90 text-sm tracking-widest uppercase font-medium"><span className="bg-white/20 px-2 py-0.5 rounded text-xs backdrop-blur-sm border border-white/10">{tripInfo.dates.split('-')[0]}</span><span className="hidden md:inline">| {tripInfo.subtitle}</span></div>
+          <h1 className="text-3xl md:text-6xl font-bold leading-tight drop-shadow-sm mb-4">{tripInfo.title}</h1>
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">{participants.map(p => (<img key={p.id} src={p.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white/20" alt={p.name} title={p.name} />))}</div>
             <button onClick={() => setIsAddPersonOpen(true)} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors border border-white/10 text-white"><UserPlus size={16} /></button>
@@ -975,6 +1076,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
             <div className="w-px bg-stone-100 my-4"></div>
             <button onClick={() => setActiveTab('checklist')} className={`flex-1 py-5 font-bold text-lg flex justify-center items-center gap-2 transition-colors ${activeTab === 'checklist' ? 'text-stone-900 border-b-2 border-stone-900' : 'text-stone-400 hover:text-stone-600'}`}><CheckSquare size={20}/> 行前清單</button>
           </div>
+
           <div className="md:hidden flex p-2 bg-stone-100/50 rounded-t-3xl border-b border-stone-200">
              <button onClick={() => setActiveTab('schedule')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'schedule' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>行程</button>
              <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'expenses' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>記帳</button>
@@ -1092,6 +1194,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
         <button onClick={() => setActiveTab('checklist')} className={`flex flex-col items-center transition-colors ${activeTab === 'checklist' ? 'text-stone-900' : 'text-stone-400'}`}><CheckSquare size={24}/><span className="text-[10px] mt-1 font-medium">清單</span></button>
       </div>
 
+      {/* Add Expense Modal */}
       {isAddExpenseOpen && (
         <div className="fixed inset-0 z-[70] bg-stone-900/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-t-3xl md:rounded-3xl p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom-20 relative">
@@ -1115,8 +1218,26 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
                         const isSelected = newExpense.beneficiaryIds.includes(p.id);
                         return (
                             <div key={p.id} className="flex items-center justify-between p-2 rounded-xl border border-stone-100 hover:bg-stone-50 transition-colors">
-                                <button onClick={() => toggleBeneficiary(p.id)} className={`flex items-center gap-3 flex-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}><img src={p.avatar} className="w-8 h-8 rounded-full" alt=""/> <span className="text-sm font-bold">{p.name}</span></button>
-                                {isSelected && (<div className="flex items-center gap-2"><span className="text-xs text-stone-400 font-bold">權重</span><input type="number" className="w-12 p-1 text-center bg-white border border-stone-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-stone-900" value={newExpense.splitWeights?.[p.id] || 1} onChange={(e) => handleWeightChange(p.id, e.target.value)} step="0.5" min="0" /></div>)}
+                                <button 
+                                    onClick={() => toggleBeneficiary(p.id)} 
+                                    className={`flex items-center gap-3 flex-1 ${isSelected ? 'opacity-100' : 'opacity-50'}`}
+                                >
+                                    <img src={p.avatar} className="w-8 h-8 rounded-full" alt=""/> 
+                                    <span className="text-sm font-bold">{p.name}</span>
+                                </button>
+                                {isSelected && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-stone-400 font-bold">權重</span>
+                                        <input 
+                                            type="number" 
+                                            className="w-12 p-1 text-center bg-white border border-stone-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-stone-900"
+                                            value={newExpense.splitWeights?.[p.id] || 1}
+                                            onChange={(e) => handleWeightChange(p.id, e.target.value)}
+                                            step="0.5"
+                                            min="0"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -1129,6 +1250,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
         </div>
       )}
 
+      {/* Add Person Modal */}
       {isAddPersonOpen && (
         <div className="fixed inset-0 z-[80] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
