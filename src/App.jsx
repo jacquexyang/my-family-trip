@@ -230,7 +230,16 @@ const TRIP_DATA = {
           icon: Utensils, 
           location: "COEX Mall" 
         },
-        { 404, time: "12:30", type: "transport", title: "移動至蠶室", note: "地鐵 2號線", desc: "三成 ➔ 蠶室 (約6分鐘)。", icon: Train, location: "Jamsil Station" },
+        { 
+          id: 404, 
+          time: "12:30", 
+          type: "transport", 
+          title: "移動至蠶室", 
+          note: "地鐵 2號線", 
+          desc: "三成 ➔ 蠶室 (約6分鐘)。", 
+          icon: Train, 
+          location: "Jamsil Station" 
+        },
         { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "下午入場。室內探險世界 + 室外魔幻島。可玩到晚上看遊行。", icon: Castle, location: "Lotte World" },
         { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾夜景", icon: Gift, location: "Seokchon Lake" },
         { 
@@ -884,14 +893,12 @@ const TripDashboard = ({ tripData }) => {
                   <span className="text-stone-500 text-lg">/ {budget.toLocaleString()}</span>
                   <button onClick={() => setIsEditingBudget(!isEditingBudget)} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><Edit3 size={14}/></button>
                 </div>
-                
                 {isEditingBudget && (
                   <div className="mb-4 flex gap-2 animate-in fade-in slide-in-from-top-2">
                     <input type="number" value={newBudgetInput} onChange={(e) => setNewBudgetInput(e.target.value)} className="bg-white/10 border border-white/20 rounded-lg px-3 py-1 text-sm text-white focus:outline-none w-32" />
                     <button onClick={() => { setBudget(parseInt(newBudgetInput)); setIsEditingBudget(false); }} className="bg-green-500 px-3 py-1 rounded-lg text-xs font-bold hover:bg-green-600">儲存</button>
                   </div>
                 )}
-
                 <div className="relative w-full h-3 bg-white/10 rounded-full overflow-hidden mb-2">
                   <div className={`absolute left-0 top-0 bottom-0 transition-all duration-1000 ${budgetPercentage > 90 ? 'bg-red-500' : 'bg-emerald-400'}`} style={{ width: `${budgetPercentage}%` }}></div>
                 </div>
