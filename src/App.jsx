@@ -55,12 +55,92 @@ const TRIP_DATA = {
       weather: "snow",
       items: [
         { id: 101, time: "07:05", type: "transport", title: "桃園機場起飛", note: "長榮航空 BR170", desc: "預計 10:30 抵達仁川機場 (ICN)。", icon: Plane, location: "Taoyuan International Airport" },
-        { id: 102, time: "11:40", type: "transport", title: "前往弘大", note: "AREX 機場快線 (普通車)", desc: "搭乘普通車前往弘大入口站 (約53分)。\n💡 建議：機場有 WOWPASS 機台可直接用台幣存入辦卡。", icon: Train, location: "Incheon International Airport" },
-        { id: 103, time: "12:50", type: "info", title: "⚠️ 重要：寄放行李", note: "弘大站 7號出口 RAON", desc: "或使用站內置物櫃。不要先去民宿，時間不夠！\n(若需換匯，弘大站附近有 Travel Depot 或 Money Box)", icon: AlertCircle, location: "Hongik University Station Exit 7" },
-        { id: 104, time: "13:10", type: "food", title: "弘大午餐", note: "商圈簡單用餐", icon: Utensils, location: "Hongdae Shopping Street" },
+        { id: 102, time: "11:40", type: "transport", title: "前往弘大", note: "AREX 機場快線 (普通車)", desc: "搭乘普通車前往弘大入口站 (約53分)。\n💡 建議：機場有 WOWPASS 機台可直接存台幣辦卡。", icon: Train, location: "Incheon International Airport" },
+        { 
+          id: 1025, 
+          time: "12:50", 
+          type: "transport", 
+          title: "交通：前往民宿路線", 
+          note: "弘大站 6號出口 (步行5分)", 
+          desc: "【地鐵路線 (推薦)】\n弘大站 6號出口 -> 直行 150m -> 經過 7-11 和 Guripdongyo 幼兒園後 -> 第一個巷口左轉 -> 步行 30m 抵達。\n\n【機場巴士 6002】\n新村五路口(現代百貨)下車 -> 過馬路往 No Brand Burger -> 左走 260m -> 新村長老教會過馬路 -> 右走 40m -> 從大韓口琴協會旁左側小巷進入直走 90m。", 
+          icon: MapPin, 
+          location: "Hongik University Station Exit 6" 
+        },
+        { id: 103, time: "12:55", type: "info", title: "寄放行李", note: "弘大站 7號出口 RAON", desc: "若還不能進房，建議先在車站寄放行李 (RAON 或置物櫃)，再去吃午餐。", icon: AlertCircle, location: "Hongik University Station Exit 7" },
+        { 
+          id: 104, 
+          time: "13:10", 
+          type: "food", 
+          title: "弘大午餐", 
+          note: "商圈簡單用餐", 
+          desc: "隨意挑選弘大商圈的餐廳，或是路邊小吃。",
+          price: "約 ₩10,000 - ₩15,000",
+          icon: Utensils, 
+          location: "Hongdae Shopping Street" 
+        },
         { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "Hongdae Nanta Theatre" },
-        { id: 106, time: "15:30", type: "hotel", title: "取行李 & Check-in", note: "前往民宿", icon: Moon, location: "Hongik University Station" },
-        { id: 107, time: "18:00", type: "food", title: "晚餐推薦", note: "胖胖豬頰肉 / 小豬存錢筒 / 馬鈴薯排骨湯", desc: "1. 胖胖豬頰肉：平價好吃，口感Q彈。\n2. 小豬存錢筒：石頭烤肉，特色十足。\n3. 二代祖馬鈴薯排骨湯：24小時營業，暖胃首選。", icon: Utensils, location: "Hongdae Shopping Street" },
+        { 
+          id: 106, 
+          time: "15:30", 
+          type: "hotel", 
+          title: "民宿 Check-in", 
+          note: "The Purple Stay", 
+          desc: "地址：首爾麻浦區新村路8號18\n(18 Sinchon-ro 8-gil, Mapo-gu)\n請參照上方地鐵/巴士指引前往。", 
+          icon: Moon, 
+          location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" 
+        },
+        { 
+          id: 107, 
+          time: "18:00", 
+          type: "food", 
+          title: "胖胖豬頰肉", 
+          note: "推薦一：老字號燒肉", 
+          desc: "弘大 25 年老店，招牌是口感 Q 彈的豬頰肉，比五花肉清爽不油膩，價格親民。\n必點：豬頰肉、五花肉。", 
+          price: "約 ₩15,000 - ₩25,000",
+          rating: 4.6,
+          address: "126 Eoulmadang-ro, Mapo-gu, Seoul",
+          icon: Utensils, 
+          location: "Tong Tong Dwaeji" 
+        },
+        { 
+          id: 108, 
+          time: "18:00", 
+          type: "food", 
+          title: "小豬存錢筒", 
+          note: "推薦二：石頭烤肉", 
+          desc: "用天然麥飯石代替烤網，肉受熱均勻不易焦，還能吸附油脂，是弘大非常有特色的烤肉店。", 
+          price: "約 ₩18,000 - ₩30,000",
+          rating: 4.3,
+          address: "146-1 Eoulmadang-ro, Mapo-gu, Seoul",
+          icon: Utensils, 
+          location: "Piggy Bank Stone Grill" 
+        },
+        { 
+          id: 109, 
+          time: "18:00", 
+          type: "food", 
+          title: "二代祖馬鈴薯排骨湯", 
+          note: "推薦三：暖胃湯鍋", 
+          desc: "24小時營業。湯頭濃郁微辣，排骨燉得非常軟爛，冬天喝一碗熱湯非常舒服。", 
+          price: "約 ₩12,000 - ₩20,000",
+          rating: 4.2,
+          address: "196 Donggyo-ro, Mapo-gu, Seoul",
+          icon: Utensils, 
+          location: "I-daejo Ppyeodagwi" 
+        },
+        { 
+          id: 110, 
+          time: "18:00", 
+          type: "food", 
+          title: "給豚的男人", 
+          note: "推薦四：濟州島豬肉", 
+          desc: "連續多年票選弘大美食第一名。主打濟州島豬肉，必沾特製麻藥醬汁，非常解膩。", 
+          price: "約 ₩20,000 - ₩40,000",
+          rating: 4.1,
+          address: "34-9 Jandari-ro 6-gil, Mapo-gu, Seoul",
+          icon: Utensils, 
+          location: "Donju-Neun Namja" 
+        },
       ]
     },
     {
@@ -69,14 +149,44 @@ const TRIP_DATA = {
       date: "12/22 (一)", 
       weather: "sunny",
       items: [
-        { id: 201, time: "09:00", type: "transport", title: "包車出發", note: "民宿門口集合", desc: "前往江華島一日遊。", icon: Car, location: "Hongdae" },
+        { id: 201, time: "09:00", type: "transport", title: "包車出發", note: "民宿門口集合", desc: "前往江華島一日遊。", icon: Car, location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" },
         { id: 202, time: "10:30", type: "sightseeing", title: "江華島 Luge", note: "斜坡滑車", desc: "刺激好玩！", icon: Users, location: "Ganghwa Seaside Resort Luge" },
-        { id: 203, time: "12:30", type: "food", title: "午餐：韓定食", note: "江華島特色", icon: Utensils, location: "Ganghwa-gun" },
+        { 
+          id: 203, 
+          time: "12:30", 
+          type: "food", 
+          title: "午餐：山塘韓定食", 
+          note: "江華島特色", 
+          desc: "精緻的韓式定食料理，包含多樣小菜與主食。",
+          price: "約 ₩20,000 - ₩30,000",
+          icon: Utensils, 
+          location: "Sandang Ganghwa" 
+        },
         { id: 204, time: "13:30", type: "sightseeing", title: "小倉織物體驗館", note: "手帕蓋章 DIY", icon: Gift, location: "Sochang Experience Center" },
-        { id: 205, time: "14:30", type: "food", title: "朝陽紡織咖啡廳", note: "網美打卡點", icon: Coffee, location: "Joyang Bangjik" },
+        { 
+          id: 205, 
+          time: "14:30", 
+          type: "food", 
+          title: "朝陽紡織咖啡廳", 
+          note: "網美打卡點", 
+          desc: "必訪的復古美術館風格咖啡廳。飲料與蛋糕價格稍高。",
+          price: "約 ₩10,000 - ₩18,000",
+          icon: Coffee, 
+          location: "Joyang Bangjik" 
+        },
         { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", desc: "眺望北韓景觀。", icon: MapPin, location: "Aegibong Peace Eco Park" },
         { id: 207, time: "19:00", type: "transport", title: "返回弘大/新村", note: "下車用餐", icon: Car, location: "Sinchon Station" },
-        { id: 208, time: "19:30", type: "food", title: "晚餐：暖身鍋物", note: "一隻雞 或 部隊鍋", desc: "消除疲勞。", icon: Utensils, location: "Sinchon" },
+        { 
+          id: 208, 
+          time: "19:30", 
+          type: "food", 
+          title: "晚餐：暖身鍋物", 
+          note: "一隻雞 或 部隊鍋", 
+          desc: "消除疲勞，推薦孔陵一隻雞或新村部隊鍋。", 
+          price: "約 ₩15,000 - ₩20,000",
+          icon: Utensils, 
+          location: "Sinchon" 
+        },
       ]
     },
     {
@@ -88,7 +198,17 @@ const TRIP_DATA = {
         { id: 301, time: "07:30", type: "transport", title: "滑雪團集合", note: "KKday 行程 (弘大)", desc: "約 07:00-08:00 集合，請依憑證為準。", icon: Car, location: "Hongik University Station Exit 8" },
         { id: 302, time: "全天", type: "sightseeing", title: "芝山森林滑雪渡假村", note: "滑雪體驗", icon: Snowflake, location: "Jisan Forest Resort" },
         { id: 303, time: "17:30", type: "transport", title: "返回首爾", note: "約 18:00 抵達弘大", icon: Car, location: "Hongik University Station" },
-        { id: 304, time: "晚上", type: "food", title: "晚餐：韓國烤肉", note: "三層肉/韓牛", desc: "補充體力，早點休息。", icon: Utensils, location: "Hongdae BBQ Street" },
+        { 
+          id: 304, 
+          time: "晚上", 
+          type: "food", 
+          title: "晚餐：韓國烤肉", 
+          note: "三層肉/韓牛", 
+          desc: "滑雪消耗大，建議吃好一點補充體力。", 
+          price: "約 ₩25,000 - ₩45,000",
+          icon: Utensils, 
+          location: "Hongdae BBQ Street" 
+        },
       ]
     },
     {
@@ -99,11 +219,32 @@ const TRIP_DATA = {
       items: [
         { id: 401, time: "09:00", type: "transport", title: "前往三成站", note: "地鐵 2號線", desc: "弘大 ➔ 三成站 (直通 COEX Mall)。", icon: Train, location: "Samseong Station" },
         { id: 402, time: "10:00", type: "sightseeing", title: "COEX 星空圖書館", note: "巨型聖誕樹", desc: "欣賞發光書牆與聖誕裝置藝術，拍照打卡。", icon: Camera, location: "Starfield Library" },
-        { id: 403, time: "11:30", type: "food", title: "午餐：COEX Mall", note: "建議在此用餐", desc: "選擇多環境好，吃飽再去樂園。", icon: Utensils, location: "COEX Mall" },
-        { id: 404, time: "12:30", type: "transport", title: "移動至蠶室", note: "地鐵 2號線", desc: "三成 ➔ 蠶室 (約6分鐘)。", icon: Train, location: "Jamsil Station" },
+        { 
+          id: 403, 
+          time: "11:30", 
+          type: "food", 
+          title: "午餐：COEX Mall", 
+          note: "建議在此用餐", 
+          desc: "選擇多環境好，先吃飽再進樂天世界戰鬥。", 
+          price: "約 ₩15,000 - ₩25,000",
+          icon: Utensils, 
+          location: "COEX Mall" 
+        },
+        { 404, time: "12:30", type: "transport", title: "移動至蠶室", note: "地鐵 2號線", desc: "三成 ➔ 蠶室 (約6分鐘)。", icon: Train, location: "Jamsil Station" },
         { id: 405, time: "13:00", type: "sightseeing", title: "樂天世界 (聖誕夜)", note: "Lotte World", desc: "下午入場。室內探險世界 + 室外魔幻島。可玩到晚上看遊行。", icon: Castle, location: "Lotte World" },
         { id: 406, time: "20:00", type: "sightseeing", title: "石村湖 / 樂天塔", note: "聖誕燈飾夜景", icon: Gift, location: "Seokchon Lake" },
-        { id: 407, time: "21:30", type: "transport", title: "返回弘大", note: "地鐵 2號線直達", icon: Train, location: "Hongik University Station" },
+        { 
+          id: 407, 
+          time: "20:30", 
+          type: "food", 
+          title: "平安夜晚餐：松理團路", 
+          note: "文青美食街", 
+          desc: "Godosik 烤肉或 Mippeu Dong。平安夜人多，預算建議拉高。", 
+          price: "約 ₩25,000 - ₩50,000",
+          icon: Utensils, 
+          location: "Songnidan-gil" 
+        },
+        { id: 408, time: "22:00", type: "transport", title: "返回弘大", note: "地鐵 2號線直達", icon: Train, location: "Hongik University Station" },
       ]
     },
     {
@@ -115,10 +256,31 @@ const TRIP_DATA = {
         { id: 501, time: "09:30", type: "transport", title: "前往光化門", note: "地鐵/公車", icon: Train, location: "Gwanghwamun Station" },
         { id: 502, time: "10:00", type: "sightseeing", title: "光化門", note: "守門將換崗儀式", icon: Users, location: "Gwanghwamun" },
         { id: 503, time: "10:30", type: "sightseeing", title: "景福宮", note: "參觀", icon: Castle, location: "Gyeongbokgung Palace" },
-        { id: 504, time: "12:30", type: "food", title: "通仁市場 (午餐)", note: "銅錢便當", icon: Utensils, location: "Tongin Market" },
+        { 
+          id: 504, 
+          time: "12:30", 
+          type: "food", 
+          title: "通仁市場 (午餐)", 
+          note: "銅錢便當", 
+          desc: "用古銅錢換購市場小吃，體驗傳統樂趣。", 
+          price: "約 ₩10,000 - ₩15,000",
+          icon: Utensils, 
+          location: "Tongin Market" 
+        },
         { id: 505, time: "14:30", type: "sightseeing", title: "西村散策", note: "韓屋咖啡廳/文創", icon: Coffee, location: "Seochon" },
         { id: 506, time: "17:00", type: "sightseeing", title: "漫步回光化門", note: "前往廣場", icon: MapPin, location: "Gwanghwamun Square" },
         { id: 507, time: "18:00", type: "sightseeing", title: "光化門耶誕市集", note: "Seoul Lantern Festival", desc: "感受聖誕氣氛。", icon: Gift, location: "Gwanghwamun Square" },
+        { 
+          id: 508, 
+          time: "20:00", 
+          type: "food", 
+          title: "聖誕晚餐", 
+          note: "鐘路美食街", 
+          desc: "聖誕節聚餐，建議避開人潮最多的主街，往鐘路巷弄尋找。", 
+          price: "約 ₩30,000 - ₩60,000",
+          icon: Utensils, 
+          location: "Gwanghwamun Food Street" 
+        },
       ]
     },
     {
@@ -128,10 +290,31 @@ const TRIP_DATA = {
       weather: "sunny",
       items: [
         { id: 601, time: "10:00", type: "sightseeing", title: "昌信洞文具玩具市場", note: "東大門/東廟站", desc: "批發市場挖寶。", icon: ShoppingBag, location: "Changsin-dong Stationery Toy Market" },
-        { id: 602, time: "12:30", type: "food", title: "廣藏市場 (午餐)", note: "綠豆餅/生牛肉/麻藥飯捲", icon: Utensils, location: "Gwangjang Market" },
+        { 
+          id: 602, 
+          time: "12:30", 
+          type: "food", 
+          title: "廣藏市場 (午餐)", 
+          note: "綠豆餅/生牛肉/麻藥飯捲", 
+          desc: "韓國傳統市場美食天堂。生牛肉是必點！", 
+          price: "約 ₩15,000 - ₩25,000",
+          icon: Utensils, 
+          location: "Gwangjang Market" 
+        },
         { id: 603, time: "14:30", type: "sightseeing", title: "潮牌一條街", note: "聖水洞 或 弘大", icon: Users, location: "Seongsu-dong" },
         { id: 604, time: "17:00", type: "sightseeing", title: "明洞新世界百貨", note: "3D 聖誕裝飾", desc: "觀賞外牆燈光秀。", icon: Camera, location: "Shinsegae Department Store Myeongdong" },
-        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川 / 東大門", note: "首爾燈節 & 晚餐", desc: "一隻雞胡同晚餐。", icon: Gift, location: "Cheonggyecheon Stream" },
+        { id: 605, time: "18:30", type: "sightseeing", title: "清溪川首爾燈節", note: "散步", desc: "沿著清溪川欣賞燈飾。", icon: Gift, location: "Cheonggyecheon Stream" },
+        { 
+          id: 606, 
+          time: "19:30", 
+          type: "food", 
+          title: "晚餐：東大門一隻雞", 
+          note: "陳玉華一隻雞 (或其他)", 
+          desc: "就在燈節附近，湯頭鮮美，天冷必吃。", 
+          price: "約 ₩15,000 - ₩22,000",
+          icon: Utensils, 
+          location: "Dongdaemun Chicken Alley" 
+        },
       ]
     },
     {
@@ -142,11 +325,32 @@ const TRIP_DATA = {
       items: [
         { id: 701, time: "10:00", type: "hotel", title: "退房 Check-out", note: "寄放行李 (弘大站)", desc: "建議寄放在弘大站 (RAON/T-Luggage)。", icon: Moon, location: "Hongik University Station" },
         { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "Mangwon Market", desc: "必吃：炸雞丁、可樂餅。買伴手禮。", icon: ShoppingBag, location: "Mangwon Market" },
-        { id: 703, time: "13:00", type: "food", title: "望遠洞咖啡廳", note: "悠閒午後", icon: Coffee, location: "Mangwon-dong" },
-        { id: 704, time: "15:30", type: "transport", title: "取行李", note: "弘大站", icon: MapPin, location: "Hongik University Station" },
-        { id: 705, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週六傍晚易塞車，請搭地鐵/快線。", icon: Train, location: "Incheon International Airport" },
-        { id: 706, time: "17:15", type: "transport", title: "抵達機場", note: "登機/退稅", icon: CheckCircle2, location: "Incheon International Airport" },
-        { id: 707, time: "19:45", type: "transport", title: "搭機返台 (BR159)", note: "21:40 抵達桃園", icon: Plane, location: "Incheon International Airport" },
+        { 
+          id: 703, 
+          time: "12:00", 
+          type: "food", 
+          title: "午餐：酥脆馬車炸豬排", 
+          note: "市場必吃", 
+          desc: "各種口味的手工炸豬排，也有棉花糖冰淇淋。", 
+          price: "約 ₩10,000 - ₩15,000",
+          icon: Utensils, 
+          location: "Mangwon Market Food" 
+        },
+        { 
+          id: 704, 
+          time: "13:00", 
+          type: "food", 
+          title: "望遠洞咖啡廳", 
+          note: "悠閒午後", 
+          desc: "醜麵包 (Ugly Bakery) 或其他文青咖啡廳。", 
+          price: "約 ₩8,000 - ₩15,000",
+          icon: Coffee, 
+          location: "Mangwon-dong" 
+        },
+        { id: 705, time: "15:30", type: "transport", title: "取行李", note: "弘大站", icon: MapPin, location: "Hongik University Station" },
+        { id: 706, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", desc: "週六傍晚易塞車，請搭地鐵/快線。", icon: Train, location: "Incheon International Airport" },
+        { id: 707, time: "17:15", type: "transport", title: "抵達機場", note: "登機/退稅", icon: CheckCircle2, location: "Incheon International Airport" },
+        { id: 708, time: "19:45", type: "transport", title: "搭機返台 (BR159)", note: "21:40 抵達桃園", icon: Plane, location: "Incheon International Airport" },
       ]
     }
   ]
@@ -173,7 +377,7 @@ const Tag = ({ type }) => {
   );
 };
 
-// 2.2 記帳邏輯 (支援權重計算)
+// 2.2 記帳邏輯
 const calculateDebts = (expenses, participants) => {
   const balances = {};
   participants.forEach(p => balances[p.id] = 0);
@@ -272,19 +476,19 @@ const TripLoginModal = ({ trip, onUnlock }) => {
   );
 };
 
-// 2.4 新增：餐點詳情頁 (Food Detail Modal) - Redesigned
+// 2.4 新增：餐點詳情頁 (Food Detail Modal)
 const FoodDetailModal = ({ item, onClose }) => {
   if (!item) return null;
 
   const handleAskGemini = () => {
-    // 建立更具體的查詢 Prompt
     const query = `幫我分析這家店：${item.title} (${item.location || '首爾'})。請提供：1. 必點推薦菜色 2. 網友評價/避雷指南 3. 人均消費預算 4. 是否適合家庭用餐？`;
     const url = `https://gemini.google.com/app?q=${encodeURIComponent(query)}`;
     window.open(url, '_blank');
   };
 
   const handleGoogleMap = () => {
-    const query = item.location ? `${item.title} ${item.location}` : item.title;
+    // 優先使用精確地址，若無則使用名稱
+    const query = item.address || (item.location ? `${item.title} ${item.location}` : item.title);
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
   };
 
@@ -307,9 +511,11 @@ const FoodDetailModal = ({ item, onClose }) => {
           <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
              <div className="flex gap-2 mb-2">
                 <span className="px-2 py-0.5 rounded-md bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider">Food</span>
-                <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1">
-                   <Star size={10} className="fill-current"/> 4.5 (模擬)
-                </span>
+                {item.rating && (
+                  <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1">
+                     <Star size={10} className="fill-current text-yellow-400"/> {item.rating}
+                  </span>
+                )}
              </div>
             <h2 className="text-3xl font-bold text-white mb-1 shadow-sm">{item.title}</h2>
             <p className="text-white/80 text-sm flex items-center gap-1 font-medium"><MapPin size={14}/> {item.location || '首爾'}</p>
@@ -319,7 +525,7 @@ const FoodDetailModal = ({ item, onClose }) => {
         {/* Content Scroll Area */}
         <div className="p-6 overflow-y-auto flex-1 bg-stone-50">
           
-          {/* Quick Actions (Stickyish) */}
+          {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button onClick={handleGoogleMap} className="p-3 rounded-2xl bg-white border border-stone-100 text-stone-700 hover:bg-stone-50 hover:border-blue-200 hover:text-blue-600 flex items-center justify-center gap-2 font-bold shadow-sm transition-all">
               <MapPin size={18} className="text-blue-500"/> Google 導航
@@ -329,7 +535,7 @@ const FoodDetailModal = ({ item, onClose }) => {
             </button>
           </div>
 
-          {/* Gemini AI Card (Redesigned) */}
+          {/* Gemini AI Card */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-100 relative overflow-hidden mb-6 group">
             <div className="absolute top-0 right-0 p-0 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Sparkles size={120} className="text-indigo-600 -mr-4 -mt-4"/>
@@ -344,7 +550,6 @@ const FoodDetailModal = ({ item, onClose }) => {
             </div>
             
             <div className="space-y-4">
-               {/* 模擬的結構化資料 */}
                <div className="flex gap-3 items-start">
                    <div className="mt-0.5 p-1 bg-orange-100 rounded text-orange-600 shrink-0"><ThumbsUp size={14}/></div>
                    <div>
@@ -357,7 +562,7 @@ const FoodDetailModal = ({ item, onClose }) => {
                    <div className="mt-0.5 p-1 bg-green-100 rounded text-green-600 shrink-0"><Wallet size={14}/></div>
                    <div>
                        <span className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-0.5">人均預算</span>
-                       <p className="text-sm text-stone-700 font-medium">約 ₩15,000 - ₩30,000 (預估)</p>
+                       <p className="text-sm text-stone-700 font-medium">{item.price || "約 ₩15,000 - ₩30,000 (預估)"}</p>
                    </div>
                </div>
 
@@ -380,20 +585,6 @@ const FoodDetailModal = ({ item, onClose }) => {
                 <p className="text-[10px] text-center text-stone-300 mt-2">點擊將開啟 Google Gemini 進行即時分析</p>
             </div>
           </div>
-
-          {/* Location Preview (Static Map Placeholder) */}
-          <div className="rounded-3xl overflow-hidden border border-stone-200 h-40 relative group cursor-pointer" onClick={handleGoogleMap}>
-             <img src="https://maps.googleapis.com/maps/api/staticmap?center=Seoul&zoom=13&size=600x300&maptype=roadmap&sensor=false&key=YOUR_API_KEY_HERE" 
-                  onError={(e) => e.target.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Seoul_Montage.png/1200px-Seoul_Montage.png"} // Fallback image
-                  alt="Map Preview" 
-                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-             <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/0 transition-colors">
-                <button className="px-4 py-2 bg-white/90 backdrop-blur rounded-full text-xs font-bold shadow-sm flex items-center gap-1 group-hover:scale-110 transition-transform">
-                    <MapPin size={14}/> 查看地圖
-                </button>
-             </div>
-          </div>
-
         </div>
       </div>
     </div>
@@ -710,12 +901,10 @@ const TripDashboard = ({ tripData }) => {
                 </div>
               </div>
 
-              {/* Add Button */}
               <button onClick={() => setIsAddExpenseOpen(true)} className="w-full py-4 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-colors flex items-center justify-center gap-2 border border-stone-200 border-dashed">
                 <PlusCircle size={20}/> 新增一筆消費
               </button>
 
-              {/* Settlement Section */}
               <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
                 <h3 className="font-bold text-stone-800 mb-4 flex items-center gap-2"><ArrowRightLeft size={18} /> 智慧結算</h3>
                 {debts.length === 0 ? <p className="text-stone-400 text-sm text-center py-4">目前沒有款項需結算</p> : (
@@ -732,7 +921,6 @@ const TripDashboard = ({ tripData }) => {
                 )}
               </div>
 
-              {/* History */}
               <div className="space-y-4">
                 <h3 className="font-bold text-stone-800 text-lg">消費紀錄</h3>
                 {expenses.map((exp) => (
@@ -773,33 +961,18 @@ const TripDashboard = ({ tripData }) => {
                    <p className="text-stone-400 text-sm mt-1">Checklist before you go</p>
                  </div>
                </div>
-
                {packingList.map((category, catIdx) => (
                  <div key={catIdx} className="bg-stone-50 rounded-2xl p-5 border border-stone-100">
-                   <h3 className="font-bold text-stone-700 mb-4 flex items-center gap-2">
-                     <div className="w-2 h-2 bg-stone-400 rounded-full"></div> {category.category}
-                   </h3>
+                   <h3 className="font-bold text-stone-700 mb-4 flex items-center gap-2"><div className="w-2 h-2 bg-stone-400 rounded-full"></div> {category.category}</h3>
                    <div className="space-y-3">
                      {category.items.map((item) => (
                        <div key={item.id} className="flex items-center gap-3 group cursor-pointer" onClick={() => togglePackingItem(category.category, item.id)}>
-                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-stone-800 border-stone-800' : 'border-stone-300 bg-white'}`}>
-                           {item.checked && <CheckCircle2 size={14} className="text-white" />}
-                         </div>
+                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-stone-800 border-stone-800' : 'border-stone-300 bg-white'}`}>{item.checked && <CheckCircle2 size={14} className="text-white" />}</div>
                          <span className={`text-sm transition-all ${item.checked ? 'text-stone-400 line-through' : 'text-stone-700'}`}>{item.name}</span>
                        </div>
                      ))}
-                     {/* Add Item Input (Simple) */}
                      <div className="flex gap-2 mt-4 pt-2 border-t border-stone-200/50">
-                        <input 
-                          type="text" 
-                          placeholder="新增項目..." 
-                          className="flex-1 bg-transparent text-sm focus:outline-none"
-                          value={newItemName}
-                          onChange={(e) => setNewItemName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if(e.key === 'Enter') handleAddPackingItem(catIdx);
-                          }}
-                        />
+                        <input type="text" placeholder="新增項目..." className="flex-1 bg-transparent text-sm focus:outline-none" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') handleAddPackingItem(catIdx); }} />
                         <button onClick={() => handleAddPackingItem(catIdx)} className="text-stone-400 hover:text-stone-800"><PlusCircle size={16}/></button>
                      </div>
                    </div>
@@ -807,11 +980,9 @@ const TripDashboard = ({ tripData }) => {
                ))}
              </div>
           )}
-
         </div>
       </div>
 
-      {/* Mobile Bottom Nav (Fixed) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-3 pb-safe z-50 flex justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <button onClick={() => setActiveTab('schedule')} className={`flex flex-col items-center transition-colors ${activeTab === 'schedule' ? 'text-stone-900' : 'text-stone-400'}`}><Calendar size={24}/><span className="text-[10px] mt-1 font-medium">行程</span></button>
         <button onClick={() => { if(activeTab === 'expenses') setIsAddExpenseOpen(true); else setActiveTab('expenses'); }} className={`flex flex-col items-center transition-colors ${activeTab === 'expenses' ? 'text-stone-900' : 'text-stone-400'}`}>
@@ -882,8 +1053,6 @@ const TripDashboard = ({ tripData }) => {
         <div className="fixed inset-0 z-[80] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
              <button onClick={() => setIsAddPersonOpen(false)} className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600"><X size={20}/></button>
-             
-             {/* List of current participants for management */}
              <div className="mb-6 text-left">
                 <h4 className="text-sm font-bold text-stone-500 mb-3 uppercase tracking-wider">目前成員</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
@@ -893,19 +1062,11 @@ const TripDashboard = ({ tripData }) => {
                         <img src={p.avatar} className="w-8 h-8 rounded-full" alt={p.name} />
                         <span className="font-medium text-stone-700">{p.name}</span>
                       </div>
-                      {/* Prevent removing the last person or specific logic can be added */}
-                      <button 
-                        onClick={() => handleRemovePerson(p.id)}
-                        className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="移除"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <button onClick={() => handleRemovePerson(p.id)} className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="移除"><Trash2 size={16} /></button>
                     </div>
                   ))}
                 </div>
              </div>
-
              <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400"><UserPlus size={32}/></div>
              <h3 className="text-lg font-bold mb-4">新增旅伴</h3>
              <input type="text" placeholder="輸入名字..." className="w-full p-3 bg-stone-50 border border-stone-100 rounded-xl mb-4 text-center focus:outline-none focus:ring-2 focus:ring-stone-900" value={newPersonName} onChange={e => setNewPersonName(e.target.value)} />
@@ -914,7 +1075,6 @@ const TripDashboard = ({ tripData }) => {
         </div>
       )}
 
-      {/* Food Detail Modal */}
       {selectedFoodItem && (
         <FoodDetailModal 
           item={selectedFoodItem} 
@@ -930,18 +1090,16 @@ const TripDashboard = ({ tripData }) => {
 export default function App() {
   const [isLocked, setIsLocked] = useState(!!TRIP_DATA.password);
 
-  // 如果沒有設定密碼，直接進入 Dashboard
   if (!isLocked) {
     return <TripDashboard tripData={TRIP_DATA} onBack={() => {}} />;
   }
 
-  // 否則顯示鎖定畫面
   return (
     <div className="font-sans text-stone-700 antialiased selection:bg-stone-200">
       <TripLoginModal 
         trip={TRIP_DATA} 
         onUnlock={() => setIsLocked(false)} 
-        onClose={() => {}} // 單一行程模式下關閉按鈕無作用
+        onClose={() => {}} 
       />
     </div>
   );
