@@ -6,19 +6,18 @@ import {
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
   Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
   AlertCircle, Sparkles, Search, Star, ThumbsUp, AlertTriangle, MessageCircle,
-  Info, Map, Languages, Calculator, LayoutGrid, Cloud
+  Info, Map, Languages, Calculator, LayoutGrid, Cloud, RefreshCw
 } from 'lucide-react';
 
 // --- Firebase Imports ---
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, setDoc, getDocs 
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, setDoc, getDocs, serverTimestamp 
 } from "firebase/firestore";
 
 // --- 0. Firebase 設定區 ---
-// 注意：在您自己的 Vercel 部署時，請建立 Firebase 專案並替換下方的 config
-// 目前使用環境變數是為了讓預覽視窗能運作
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDwBtBbVpJ5RU2LkSVaDsGVbd2QAITx7mA",
   authDomain: "my-family-trip.firebaseapp.com",
@@ -30,49 +29,46 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'seoul-trip-2025';
+// 資料庫集合的前綴ID (用於區分不同行程資料，若有需要可改為 'my-family-trip')
+const appId = 'seoul-trip-2025'; 
 
 // --- 1. 資料庫區 (Data Layer) ---
+
+// 預設清單 (當資料庫為空時自動匯入)
+const DEFAULT_PACKING_ITEMS = [
+  { category: "證件與錢財", name: "護照 (效期6個月以上)" },
+  { category: "證件與錢財", name: "韓幣 / 信用卡 / WOWPASS" },
+  { category: "證件與錢財", name: "網卡 / E-sim / Wifi機" },
+  { category: "證件與錢財", name: "機票 / 住宿憑證" },
+  { category: "證件與錢財", name: "T-money 交通卡 (建議先儲值)" },
+  { category: "電子產品", name: "轉接頭 (韓國雙圓孔 4.8mm)" },
+  { category: "電子產品", name: "行動電源" },
+  { category: "電子產品", name: "充電線 (手機/手錶)" },
+  { category: "衣物 (冬季)", name: "發熱衣 / 發熱褲" },
+  { category: "衣物 (冬季)", name: "羽絨外套 / 大衣" },
+  { category: "衣物 (冬季)", name: "圍巾 / 毛帽 / 手套 (滑雪必備)" },
+  { category: "衣物 (冬季)", name: "好走的鞋子" },
+  { category: "個人用品", name: "牙刷牙膏 (韓國環保不提供)" },
+  { category: "個人用品", name: "個人藥品 (感冒/腸胃/暈車)" },
+  { category: "個人用品", name: "保養品 / 護手霜 / 暖暖包" }
+];
 
 const TRIP_DATA = {
   id: 'seoul_2025', 
   password: "2024", 
   title: "冬日首爾聖誕之旅 🎄",
-  subtitle: "滑雪、美食與聖誕燈飾",
+  subtitle: "滑雪、美食與聖誕燈飾的浪漫行",
   dates: "2025.12.21 - 2025.12.27", 
   budget: 60000,
   coverImage: "https://images.unsplash.com/photo-1542044896530-05d85be9b11a?q=80&w=2000&auto=format&fit=crop", 
-  // 預設參與者 (若資料庫為空時使用)
-  defaultParticipants: [
+  participants: [
     { id: 1, name: "Howard家", avatar: "https://i.pravatar.cc/150?u=1" },
     { id: 2, name: "楓家", avatar: "https://i.pravatar.cc/150?u=5" },
   ],
-  packingList: [
-    { category: "證件與錢財", items: [
-      { id: 'p1', name: "護照 (效期6個月以上)", checked: false },
-      { id: 'p2', name: "韓幣 / 信用卡 / WOWPASS", checked: false },
-      { id: 'p3', name: "網卡 / E-sim / Wifi機", checked: false },
-      { id: 'p4', name: "機票 / 住宿憑證", checked: false },
-      { id: 'p5', name: "T-money 交通卡 (建議先儲值)", checked: false }
-    ]},
-    { category: "電子產品", items: [
-      { id: 'e1', name: "轉接頭 (韓國雙圓孔 4.8mm)", checked: false },
-      { id: 'e2', name: "行動電源", checked: false },
-      { id: 'e3', name: "充電線 (手機/手錶)", checked: false }
-    ]},
-    { category: "衣物 (冬季)", items: [
-      { id: 'c1', name: "發熱衣 / 發熱褲", checked: false },
-      { id: 'c2', name: "羽絨外套 / 大衣", checked: false },
-      { id: 'c3', name: "圍巾 / 毛帽 / 手套 (滑雪必備)", checked: false },
-      { id: 'c4', name: "好走的鞋子", checked: false }
-    ]},
-    { category: "個人用品", items: [
-      { id: 't1', name: "牙刷牙膏 (韓國環保不提供)", checked: false },
-      { id: 't2', name: "個人藥品 (感冒/腸胃/暈車)", checked: false },
-      { id: 't3', name: "保養品 / 護手霜 / 暖暖包", checked: false }
-    ]}
-  ],
+  // packingList 已移除，改由 Firebase 動態載入
   days: [
     {
       day: 1,
@@ -92,7 +88,16 @@ const TRIP_DATA = {
           icon: MapPin, 
           location: "Hongik University Station Exit 6" 
         },
-        { id: 103, time: "12:55", type: "info", title: "寄放行李", note: "弘大站 7號出口 RAON", desc: "若還不能進房，建議先在車站寄放行李 (RAON 或置物櫃)，再去吃午餐。", icon: AlertCircle, location: "Hongik University Station Exit 7" },
+        { 
+          id: 103, 
+          time: "12:55", 
+          type: "info", 
+          title: "寄放行李：RAON 保管所", 
+          note: "弘大站 7號出口 (站內)", 
+          desc: "位於 7 號出口旁 (地下2樓，免刷卡區)。\n💰 費用(單日)：S ₩4,000 / M ₩6,000 / L ₩8,000\n✅ 無需預約，可直接現場辦理 (營業時間 09:30-21:30)。", 
+          icon: AlertCircle, 
+          location: "Hongik University Station Exit 7" 
+        },
         { 
           id: 104, 
           time: "13:10", 
@@ -110,8 +115,8 @@ const TRIP_DATA = {
           time: "15:30", 
           type: "hotel", 
           title: "民宿 Check-in", 
-          note: "The Purple Stay", 
-          desc: "地址：首爾麻浦區新村路8號18\n(18 Sinchon-ro 8-gil, Mapo-gu)\n請參照上方地鐵/巴士指引前往。", 
+          note: "The Purple Stay (3F)", 
+          desc: "地址：18 Sinchon-ro 8-gil 3층, 首爾, 首爾 04056, 南韓\n(3F, 18 Sinchon-ro 8-gil, Mapo-gu)\n請參照上方地鐵/巴士指引前往。", 
           icon: Moon, 
           location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" 
         },
@@ -123,7 +128,7 @@ const TRIP_DATA = {
           note: "推薦一：老字號燒肉", 
           desc: "弘大 25 年老店，招牌是口感 Q 彈的豬頰肉，比五花肉清爽不油膩，價格親民。\n必點：豬頰肉、五花肉。", 
           price: "約 ₩15,000 - ₩25,000",
-          rating: 4.6,
+          rating: 4.3,
           address: "126 Eoulmadang-ro, Mapo-gu, Seoul",
           icon: Utensils, 
           location: "Tong Tong Dwaeji" 
@@ -175,8 +180,26 @@ const TRIP_DATA = {
       date: "12/22 (一)", 
       weather: "sunny",
       items: [
-        { id: 201, time: "09:00", type: "transport", title: "包車出發", note: "民宿門口集合", desc: "前往江華島一日遊。", icon: Car, location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" },
-        { id: 202, time: "10:30", type: "sightseeing", title: "江華島 Luge", note: "斜坡滑車", desc: "刺激好玩！", icon: Users, location: "4-15 Seondu-ri, Gilsang-myeon, Ganghwa-gun, Incheon" },
+        { 
+          id: 201, 
+          time: "09:00", 
+          type: "transport", 
+          title: "住宿出發 (包車)", 
+          note: "司機至 The Purple Stay 接您", 
+          desc: "前往江華海邊度假村 (約 80 分鐘)。", 
+          icon: Car, 
+          location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" 
+        },
+        { 
+          id: 202, 
+          time: "10:20", 
+          type: "sightseeing", 
+          title: "江華島 Luge 斜坡滑車", 
+          note: "建議玩 2 次", 
+          desc: "包含購票、搭纜車、滑行。❄️ 冬天滑行風大，記得戴手套/圍巾保暖！", 
+          icon: Users, 
+          location: "4-15 Seondu-ri, Gilsang-myeon, Ganghwa-gun, Incheon" 
+        },
         { 
           id: 203, 
           time: "12:30", 
@@ -190,34 +213,58 @@ const TRIP_DATA = {
           icon: Utensils, 
           location: "Sandang Ganghwa" 
         },
-        { id: 204, time: "13:30", type: "sightseeing", title: "小倉織物體驗館", note: "手帕蓋章 DIY", icon: Gift, location: "8 Nammunan-gil 20beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon" },
+        { 
+          id: 204, 
+          time: "13:30", 
+          type: "sightseeing", 
+          title: "小倉織物體驗館", 
+          note: "手帕蓋章 DIY", 
+          desc: "免費參觀，DIY體驗需付費 (約20-30分鐘)。優雅的傳統韓屋景點。", 
+          icon: Gift, 
+          location: "8 Nammunan-gil 20beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon" 
+        },
         { 
           id: 205, 
           time: "14:30", 
           type: "food", 
           title: "朝陽紡織咖啡廳 (조양방직)", 
-          note: "網美打卡點", 
-          desc: "必訪的復古美術館風格咖啡廳。飲料與蛋糕價格稍高。",
+          note: "Joyang Bangjik", 
+          desc: "就在小倉體驗館附近。超大舊紡織廠風格，適合拍照。\n⚠️ 若時間趕，改為「外帶+純拍照」，以確保能去到愛妓峰。",
           price: "約 ₩10,000 - ₩18,000",
           rating: 4.5,
           address: "12 Hyangnamu-gil 5beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon",
           icon: Coffee, 
           location: "Joyang Bangjik" 
         },
-        { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", desc: "眺望北韓景觀。", icon: MapPin, location: "289 Pyeonghwagongwon-ro, Wolgot-myeon, Gimpo-si, Gyeonggi-do" },
-        { id: 207, time: "19:00", type: "transport", title: "返回弘大/新村", note: "下車用餐", icon: Car, location: "Sinchon Station" },
         { 
-          id: 208, 
-          time: "19:30", 
-          type: "food", 
-          title: "晚餐：孔陵一隻雞 (공릉닭한마리)", 
-          note: "暖身鍋物", 
-          desc: "消除疲勞，清淡鮮美，最後的雞蛋粥必吃。", 
-          price: "約 ₩15,000 - ₩22,000",
-          rating: 4.4,
-          address: "54 Yonsei-ro 2-gil, Seodaemun-gu, Seoul",
-          icon: Utensils, 
-          location: "Gongneung Dakhanmari Sinchon" 
+          id: 2055, 
+          time: "15:45", 
+          type: "transport", 
+          title: "⚠️ 關鍵時刻：移動", 
+          note: "必須準時離開", 
+          desc: "前往愛妓峰 (約30分)。因是軍事管制區，有嚴格入場時間限制。", 
+          icon: AlertCircle,
+          location: "Ganghwa-gun"
+        },
+        { 
+          id: 206, 
+          time: "16:15", 
+          type: "sightseeing", 
+          title: "愛妓峰和平生態公園", 
+          note: "星巴克 (需帶護照!)", 
+          desc: "🔴 務必攜帶實體護照！\n位於民統線管制區，星巴克可看北韓。冬季最後入場通常是 16:30。", 
+          icon: MapPin, 
+          location: "289 Pyeonghwagongwon-ro, Wolgot-myeon, Gimpo-si, Gyeonggi-do" 
+        },
+        { 
+          id: 207, 
+          time: "18:40", 
+          type: "hotel", 
+          title: "抵達弘大住宿", 
+          note: "結束愉快的一天", 
+          desc: "返回首爾弘大 (車程約 60-70 分)。", 
+          icon: Moon, 
+          location: "18 Sinchon-ro 8-gil, Mapo-gu, Seoul" 
         },
       ]
     },
@@ -281,7 +328,7 @@ const TRIP_DATA = {
           id: 407, 
           time: "20:30", 
           type: "food", 
-          title: "平安夜晚餐：Godosik", 
+          title: "平安夜晚餐：Godosik (고도식)", 
           note: "松理團路", 
           desc: "高人氣烤肉店，專人代烤。平安夜人多，預算建議拉高。", 
           price: "約 ₩25,000 - ₩50,000",
@@ -395,7 +442,7 @@ const TRIP_DATA = {
           id: 704, 
           time: "13:00", 
           type: "food", 
-          title: "Ugly Bakery", 
+          title: "Ugly Bakery (어글리베이커리)", 
           note: "望遠洞咖啡廳", 
           desc: "爆漿鮮奶油麵包名店，需排隊。", 
           price: "約 ₩8,000 - ₩15,000",
@@ -443,15 +490,20 @@ const calculateDebts = (expenses, participants) => {
     const payerId = exp.payerId;
     const amount = parseFloat(exp.amount);
     
+    // 找出分攤對象
     const beneficiaryIds = exp.beneficiaryIds && exp.beneficiaryIds.length > 0 
       ? exp.beneficiaryIds 
       : participants.map(p => p.id);
     
+    // 取得權重設定 (若無則預設為 1)
     const weights = exp.splitWeights || {};
     const totalWeight = beneficiaryIds.reduce((sum, id) => sum + (parseFloat(weights[id]) || 1), 0);
     
     if (totalWeight > 0) {
+      // 付款人先 + 總金額
       balances[payerId] += amount;
+
+      // 每個受益人 (包含付款人自己) 扣掉應付的份額 (按權重)
       beneficiaryIds.forEach(pId => {
         if (balances[pId] !== undefined) {
           const weight = parseFloat(weights[pId]) || 1;
@@ -466,6 +518,7 @@ const calculateDebts = (expenses, participants) => {
   
   Object.keys(balances).forEach(id => {
     const amount = balances[id];
+    // 避免浮點數誤差
     if (amount < -1) debtors.push({ id: parseInt(id), amount });
     if (amount > 1) creditors.push({ id: parseInt(id), amount });
   });
@@ -1092,7 +1145,7 @@ const TripDashboard = ({ tripData }) => {
             </div>
           )}
 
-          {/* TAB: 行前清單 Checklist */}
+          {/* TAB: Checklist */}
           {activeTab === 'checklist' && (
              <div className="p-6 md:p-10 space-y-8 min-h-[60vh]">
                <div className="flex justify-between items-end mb-4">
@@ -1198,11 +1251,8 @@ const TripDashboard = ({ tripData }) => {
                 <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                   {participants.map(p => (
                     <div key={p.id} className="flex justify-between items-center p-2 bg-stone-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <img src={p.avatar} className="w-8 h-8 rounded-full" alt={p.name} />
-                        <span className="font-medium text-stone-700">{p.name}</span>
-                      </div>
-                      <button onClick={() => handleRemovePerson(p.id)} className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="移除"><Trash2 size={16} /></button>
+                      <div className="flex items-center gap-3"><img src={p.avatar} className="w-8 h-8 rounded-full" alt={p.name} /><span className="font-medium text-stone-700">{p.name}</span></div>
+                      <button onClick={() => handleRemovePerson(p.docId)} className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="移除"><Trash2 size={16} /></button>
                     </div>
                   ))}
                 </div>
