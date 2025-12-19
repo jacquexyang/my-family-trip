@@ -6,8 +6,32 @@ import {
   ExternalLink, Castle, Gift, ShoppingBag, Copy, CheckCircle2, Edit3, 
   Globe, PlusCircle, Briefcase, Lock, KeyRound, CheckSquare, UserPlus, Trash2,
   AlertCircle, Sparkles, Search, Star, ThumbsUp, AlertTriangle, MessageCircle,
-  Map, Info
+  Info, Map, Languages, Calculator, LayoutGrid, Cloud
 } from 'lucide-react';
+
+// --- Firebase Imports ---
+import { initializeApp } from "firebase/app";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { 
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, setDoc, getDocs 
+} from "firebase/firestore";
+
+// --- 0. Firebase 設定區 ---
+// 注意：在您自己的 Vercel 部署時，請建立 Firebase 專案並替換下方的 config
+// 目前使用環境變數是為了讓預覽視窗能運作
+const firebaseConfig = {
+  apiKey: "AIzaSyDwBtBbVpJ5RU2LkSVaDsGVbd2QAITx7mA",
+  authDomain: "my-family-trip.firebaseapp.com",
+  projectId: "my-family-trip",
+  storageBucket: "my-family-trip.firebasestorage.app",
+  messagingSenderId: "757482722852",
+  appId: "1:757482722852:web:2b35e7e4fcd1ab6c362ab1"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'seoul-trip-2025';
 
 // --- 1. 資料庫區 (Data Layer) ---
 
@@ -19,7 +43,8 @@ const TRIP_DATA = {
   dates: "2025.12.21 - 2025.12.27", 
   budget: 60000,
   coverImage: "https://images.unsplash.com/photo-1542044896530-05d85be9b11a?q=80&w=2000&auto=format&fit=crop", 
-  participants: [
+  // 預設參與者 (若資料庫為空時使用)
+  defaultParticipants: [
     { id: 1, name: "Howard家", avatar: "https://i.pravatar.cc/150?u=1" },
     { id: 2, name: "楓家", avatar: "https://i.pravatar.cc/150?u=5" },
   ],
@@ -79,7 +104,7 @@ const TRIP_DATA = {
           icon: Utensils, 
           location: "Hongdae Shopping Street" 
         },
-        { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "29 Yanghwa-ro 16-gil, Mapo-gu, Seoul" },
+        { id: 105, time: "14:00", type: "sightseeing", title: "弘大亂打秀", note: "Nanta Show", desc: "需提早 20 分鐘換票入場。", icon: Users, location: "Hongdae Nanta Theatre" },
         { 
           id: 106, 
           time: "15:30", 
@@ -94,11 +119,11 @@ const TRIP_DATA = {
           id: 107, 
           time: "18:00", 
           type: "food", 
-          title: "胖胖豬頰肉", 
+          title: "胖胖豬頰肉 (통통돼지뽈살)", 
           note: "推薦一：老字號燒肉", 
           desc: "弘大 25 年老店，招牌是口感 Q 彈的豬頰肉，比五花肉清爽不油膩，價格親民。\n必點：豬頰肉、五花肉。", 
           price: "約 ₩15,000 - ₩25,000",
-          rating: 4.3,
+          rating: 4.6,
           address: "126 Eoulmadang-ro, Mapo-gu, Seoul",
           icon: Utensils, 
           location: "Tong Tong Dwaeji" 
@@ -107,7 +132,7 @@ const TRIP_DATA = {
           id: 108, 
           time: "18:00", 
           type: "food", 
-          title: "小豬存錢筒", 
+          title: "小豬存錢筒 (돼지저금통)", 
           note: "推薦二：石頭烤肉", 
           desc: "用天然麥飯石代替烤網，肉受熱均勻不易焦，還能吸附油脂，是弘大非常有特色的烤肉店。", 
           price: "約 ₩18,000 - ₩30,000",
@@ -133,7 +158,7 @@ const TRIP_DATA = {
           id: 110, 
           time: "18:00", 
           type: "food", 
-          title: "給豚的男人", 
+          title: "給豚的男人 (돈주는남자)", 
           note: "推薦四：濟州島豬肉", 
           desc: "連續多年票選弘大美食第一名。主打濟州島豬肉，必沾特製麻藥醬汁，非常解膩。", 
           price: "約 ₩20,000 - ₩40,000",
@@ -418,20 +443,15 @@ const calculateDebts = (expenses, participants) => {
     const payerId = exp.payerId;
     const amount = parseFloat(exp.amount);
     
-    // 找出分攤對象
     const beneficiaryIds = exp.beneficiaryIds && exp.beneficiaryIds.length > 0 
       ? exp.beneficiaryIds 
       : participants.map(p => p.id);
     
-    // 取得權重設定 (若無則預設為 1)
     const weights = exp.splitWeights || {};
     const totalWeight = beneficiaryIds.reduce((sum, id) => sum + (parseFloat(weights[id]) || 1), 0);
     
     if (totalWeight > 0) {
-      // 付款人先 + 總金額
       balances[payerId] += amount;
-
-      // 每個受益人 (包含付款人自己) 扣掉應付的份額 (按權重)
       beneficiaryIds.forEach(pId => {
         if (balances[pId] !== undefined) {
           const weight = parseFloat(weights[pId]) || 1;
@@ -446,7 +466,6 @@ const calculateDebts = (expenses, participants) => {
   
   Object.keys(balances).forEach(id => {
     const amount = balances[id];
-    // 避免浮點數誤差
     if (amount < -1) debtors.push({ id: parseInt(id), amount });
     if (amount > 1) creditors.push({ id: parseInt(id), amount });
   });
@@ -508,7 +527,7 @@ const TripLoginModal = ({ trip, onUnlock }) => {
   );
 };
 
-// 2.4 新增：餐點詳情頁 (Item Detail Modal) - 升級為通用詳情頁
+// 2.4 新增：通用詳情頁 (Item Detail Modal)
 const ItemDetailModal = ({ item, onClose }) => {
   if (!item) return null;
 
@@ -592,7 +611,7 @@ const ItemDetailModal = ({ item, onClose }) => {
           
           <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20">
              <div className="flex gap-2 mb-2">
-                <span className={`px-2 py-0.5 rounded-md text-white text-[10px] font-bold uppercase tracking-wider ${item.type === 'food' ? 'bg-orange-500' : 'bg-blue-500'}`}>{item.type}</span>
+                <span className={`px-2 py-0.5 rounded-md text-white text-[10px] font-bold uppercase tracking-wider ${item.type === 'food' ? 'bg-orange-500' : item.type === 'sightseeing' ? 'bg-emerald-500' : 'bg-blue-500'}`}>{item.type}</span>
                 {item.rating && (
                   <span className="px-2 py-0.5 rounded-md bg-white/20 text-white border border-white/20 text-[10px] backdrop-blur-md flex items-center gap-1">
                      <Star size={10} className="fill-current text-yellow-400"/> {item.rating}
@@ -697,6 +716,7 @@ const TripDashboard = ({ tripData }) => {
   const [expenses, setExpenses] = useState([{ id: 1, title: '預付公基金', amount: 3000, payerId: 1, beneficiaryIds: [1, 2], splitWeights: {1: 1, 2: 1}, date: '出發前' }]);
   const [budget, setBudget] = useState(tripData.budget || 50000);
   const [selectedItem, setSelectedItem] = useState(null); // Changed to generic item
+  const [isToolsOpen, setIsToolsOpen] = useState(false); // Tool modal state
 
   // UI State
   const [isEditingBudget, setIsEditingBudget] = useState(false);
@@ -849,7 +869,37 @@ const TripDashboard = ({ tripData }) => {
       <div className="relative w-full h-[40vh] md:h-[50vh]">
         <img src={tripData.coverImage} alt={tripData.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-stone-900/20 to-stone-900/40"></div>
-        <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex justify-end items-center z-10 max-w-7xl mx-auto w-full">
+        <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex justify-between items-center z-10 max-w-7xl mx-auto w-full">
+           {/* Travel Tools Button */}
+           <div className="relative">
+             <button 
+               onClick={() => setIsToolsOpen(!isToolsOpen)}
+               className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 text-sm font-medium"
+             >
+               <LayoutGrid size={18} /> <span className="hidden md:inline">工具</span>
+             </button>
+             
+             {isToolsOpen && (
+               <div className="absolute top-12 left-0 w-48 bg-white rounded-2xl shadow-xl border border-stone-100 p-2 animate-in fade-in zoom-in duration-200 origin-top-left z-50">
+                 <button onClick={() => window.open('https://translate.google.com/?sl=auto&tl=ko', '_blank')} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 text-left text-sm text-stone-700 transition-colors">
+                   <div className="p-1.5 bg-blue-50 text-blue-500 rounded-lg"><Languages size={16}/></div> Google 翻譯
+                 </button>
+                 <button onClick={() => window.open('https://papago.naver.com/', '_blank')} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 text-left text-sm text-stone-700 transition-colors">
+                   <div className="p-1.5 bg-green-50 text-green-500 rounded-lg"><MessageCircle size={16}/></div> Papago 翻譯
+                 </button>
+                 <button onClick={() => window.open('https://map.naver.com/v5/', '_blank')} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 text-left text-sm text-stone-700 transition-colors">
+                   <div className="p-1.5 bg-green-50 text-green-600 rounded-lg"><Map size={16}/></div> Naver 地圖
+                 </button>
+                 <button onClick={() => window.open('https://www.google.com/search?q=TWD+to+KRW', '_blank')} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 text-left text-sm text-stone-700 transition-colors">
+                   <div className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg"><Calculator size={16}/></div> 匯率試算
+                 </button>
+                 <button onClick={() => window.open('https://www.seoulmetro.co.kr/en/cyberStation.do', '_blank')} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 text-left text-sm text-stone-700 transition-colors">
+                   <div className="p-1.5 bg-orange-50 text-orange-500 rounded-lg"><Train size={16}/></div> 地鐵圖
+                 </button>
+               </div>
+             )}
+           </div>
+
           <button onClick={handleShare} className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 text-sm font-medium">
             {copiedId === 'share-btn' ? <CheckCircle2 size={18} className="text-green-400"/> : <Share2 size={18} />} <span className="hidden md:inline">分享行程</span>
           </button>
@@ -1165,10 +1215,10 @@ const TripDashboard = ({ tripData }) => {
         </div>
       )}
 
-      {selectedFoodItem && (
-        <FoodDetailModal 
-          item={selectedFoodItem} 
-          onClose={() => setSelectedFoodItem(null)} 
+      {selectedItem && (
+        <ItemDetailModal 
+          item={selectedItem} 
+          onClose={() => setSelectedItem(null)} 
         />
       )}
     </div>
