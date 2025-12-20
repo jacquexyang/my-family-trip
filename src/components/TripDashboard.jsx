@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ChevronLeft, LayoutGrid, Languages, MessageCircle, Map, Calculator, Train, CheckCircle2, Share2, UserPlus, 
   Calendar, Sun, Wallet, Edit3, PlusCircle, CheckSquare, Trash2, ArrowRightLeft, Clock, Navigation, Sparkles,
-  MapPin, Copy, ExternalLink // Added missing imports
+  MapPin, Copy, ExternalLink, Pencil, Plus 
 } from 'lucide-react';
 import { 
-  collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, writeBatch, serverTimestamp 
+  collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, orderBy, writeBatch, serverTimestamp, getDoc 
 } from "firebase/firestore";
 import { signInAnonymously } from "firebase/auth";
 
@@ -15,24 +15,37 @@ import { ALL_TRIPS_CONFIG, DEFAULT_PACKING_LIST } from '../config/tripsData';
 import { calculateDebts } from '../utils/helpers';
 import Tag from './Tag';
 import ItemDetailModal from './ItemDetailModal';
+import ScheduleFormModal from './ScheduleFormModal'; // 新增引入
+
+// 預設的空行程架構 (給全新旅程使用)
+const DEFAULT_EMPTY_DAYS = [
+  { day: 1, label: "Day 1", date: "第一天", weather: "sunny", items: [] },
+  { day: 2, label: "Day 2", date: "第二天", weather: "sunny", items: [] },
+  { day: 3, label: "Day 3", date: "第三天", weather: "sunny", items: [] },
+];
 
 const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const [activeTab, setActiveTab] = useState('schedule'); 
   const [activeDay, setActiveDay] = useState(1);
   const [copiedId, setCopiedId] = useState(null);
   
-  // Data
-  const tripData = ALL_TRIPS_CONFIG[tripId] ? ALL_TRIPS_CONFIG[tripId].data : null;
+  // Data (Initial Static Data)
+  const staticTripData = ALL_TRIPS_CONFIG[tripId] ? ALL_TRIPS_CONFIG[tripId].data : null;
 
   // State
+  const [daysData, setDaysData] = useState(staticTripData?.days || DEFAULT_EMPTY_DAYS); // 這裡改用 State 存行程
   const [participants, setParticipants] = useState([]);
   const [packingList, setPackingList] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [budget, setBudget] = useState(tripData?.budget || 50000);
+  const [budget, setBudget] = useState(staticTripData?.budget || 50000);
+  
+  // Modals & UI
   const [selectedItem, setSelectedItem] = useState(null);
+  const [editingItem, setEditingItem] = useState(null); // 編輯中的項目
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false); // 行程編輯 Modal
   const [isToolsOpen, setIsToolsOpen] = useState(false);
 
-  // UI State
+  // UI State for other tabs
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [newBudgetInput, setNewBudgetInput] = useState(budget);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
@@ -42,17 +55,34 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const [newPersonName, setNewPersonName] = useState('');
   const [newItemName, setNewItemName] = useState('');
 
-  const currentDayData = tripData?.days?.find(d => d.day === activeDay) || tripData?.days?.[0] || { items: [] };
+  const currentDayData = daysData.find(d => d.day === activeDay) || daysData[0] || { items: [] };
 
   // --- Firebase Listeners ---
   useEffect(() => {
-     if (!tripId || !tripData) return;
+     if (!tripId) return;
+
+     // 0. Schedule (Full Days Data) - 使用符合規範的 4 段路徑 (Collection/Doc/Collection/Doc)
+     // artifacts(col) -> {tripId}(doc) -> public(col) -> schedule(doc)
+     const scheduleDocRef = doc(db, 'artifacts', tripId, 'public', 'schedule');
+     
+     const unsubSchedule = onSnapshot(scheduleDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+           setDaysData(docSnap.data().days);
+        } else {
+           // 若雲端無資料，使用靜態資料初始化，並寫入雲端
+           if (staticTripData?.days) {
+               setDoc(scheduleDocRef, { days: staticTripData.days }).catch(console.error);
+           } else {
+               setDoc(scheduleDocRef, { days: DEFAULT_EMPTY_DAYS }).catch(console.error);
+           }
+        }
+     });
 
      // 1. Packing List
      const packingRef = collection(db, 'artifacts', tripId, 'public', 'data', 'packing-list');
      const unsubPacking = onSnapshot(query(packingRef, orderBy('createdAt')), (snapshot) => {
          if (snapshot.empty) {
-            if (tripId === 'seoul_2025' && DEFAULT_PACKING_LIST) {
+            if (DEFAULT_PACKING_LIST) {
                 const batch = writeBatch(db);
                 DEFAULT_PACKING_LIST.forEach(item => {
                    const docRef = doc(packingRef);
@@ -83,9 +113,17 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
         if (!snapshot.empty) {
            setParticipants(snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id })));
         } else {
-           if (tripData.defaultParticipants) {
+           if (staticTripData?.defaultParticipants) {
                const batch = writeBatch(db);
-               tripData.defaultParticipants.forEach((p, index) => {
+               staticTripData.defaultParticipants.forEach((p, index) => {
+                   const docRef = doc(partRef);
+                   batch.set(docRef, { ...p, id: index + 1, createdAt: serverTimestamp() });
+               });
+               batch.commit().catch(console.error);
+           } else {
+               // Default seed for custom trips
+               const batch = writeBatch(db);
+               [{name: '我', avatar: 'https://i.pravatar.cc/150?u=me'}].forEach((p, index) => {
                    const docRef = doc(partRef);
                    batch.set(docRef, { ...p, id: index + 1, createdAt: serverTimestamp() });
                });
@@ -94,13 +132,69 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
         }
      });
 
-     // Init auth
      signInAnonymously(auth).catch(console.error);
 
-     return () => { unsubPacking(); unsubExp(); unsubPart(); };
-  }, [tripId, tripData]);
+     return () => { unsubSchedule(); unsubPacking(); unsubExp(); unsubPart(); };
+  }, [tripId]); // Removed staticTripData from deps to avoid reload loops
 
-  // Handlers
+  useEffect(() => {
+    if (isAddExpenseOpen && participants.length > 0) {
+        setNewExpense(prev => ({ 
+            ...prev, 
+            beneficiaryIds: participants.map(p => p.id),
+            splitWeights: participants.reduce((acc, p) => ({ ...acc, [p.id]: 1 }), {})
+        }));
+    }
+  }, [isAddExpenseOpen, participants]);
+
+  // --- Schedule Handlers ---
+  const handleSaveScheduleItem = async (dayIndex, newItem) => {
+    const updatedDays = [...daysData];
+    // 找到當天
+    const targetDay = updatedDays.find(d => d.day === activeDay);
+    if (!targetDay) return;
+
+    if (editingItem) {
+        // Edit Mode
+        const itemIndex = targetDay.items.findIndex(i => i.id === newItem.id);
+        if (itemIndex > -1) {
+            targetDay.items[itemIndex] = newItem;
+        }
+    } else {
+        // Add Mode
+        // 簡單排序：按時間
+        targetDay.items.push(newItem);
+        targetDay.items.sort((a, b) => a.time.localeCompare(b.time));
+    }
+    
+    // Save to Firestore: artifacts/{tripId}/public/schedule
+    await setDoc(doc(db, 'artifacts', tripId, 'public', 'schedule'), { days: updatedDays });
+    setEditingItem(null);
+  };
+
+  const handleDeleteScheduleItem = async (itemId) => {
+    if(!confirm("確定要刪除這個行程嗎？")) return;
+    const updatedDays = [...daysData];
+    const targetDay = updatedDays.find(d => d.day === activeDay);
+    if (targetDay) {
+        targetDay.items = targetDay.items.filter(i => i.id !== itemId);
+        await setDoc(doc(db, 'artifacts', tripId, 'public', 'schedule'), { days: updatedDays });
+    }
+  };
+
+  const openAddScheduleModal = () => {
+    setEditingItem(null);
+    setIsScheduleModalOpen(true);
+  };
+
+  const openEditScheduleModal = (item, e) => {
+    e.stopPropagation();
+    setEditingItem(item);
+    setIsScheduleModalOpen(true);
+  };
+
+  // --- Other Handlers (Expenses, Packing, etc.) ---
+  // (這部分保持不變，為了節省空間，請直接使用之前的代碼，或我需要完整列出？為了完整性我還是列出)
   const handleAddExpense = async () => {
     if (!newExpense.title || !newExpense.amount) return;
     const finalBeneficiaries = newExpense.beneficiaryIds.length > 0 ? newExpense.beneficiaryIds : participants.map(p => p.id);
@@ -139,14 +233,16 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   };
   
   const togglePackingItem = async (cat, itemId) => {
-     // Check local state for checked status
      let currentChecked = false;
+     let itemToUpdate = null;
      for(const c of packingList) {
         const found = c.items.find(i => i.id === itemId);
-        if(found) { currentChecked = found.checked; break; }
+        if(found) { itemToUpdate = found; break; }
      }
-     const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
-     await updateDoc(itemRef, { checked: !currentChecked });
+     if(itemToUpdate) {
+         const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', itemId);
+         await updateDoc(itemRef, { checked: !itemToUpdate.checked });
+     }
   };
   
   const handleDeletePackingItem = async (itemId) => {
@@ -172,7 +268,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
     setShowShareModal(true);
     setTimeout(() => setShowShareModal(false), 3000);
   };
-
   const copyAddress = (text, id) => { navigator.clipboard.writeText(text); setCopiedId(id); setTimeout(() => setCopiedId(null), 2000); };
   const handleNavigation = (location, title) => { const query = location || title; const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; window.open(url, '_blank'); };
   const handleItemClick = (item) => setSelectedItem(item);
@@ -184,6 +279,7 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
   const budgetPercentage = Math.min((totalSpent / budget) * 100, 100);
 
+  // Helper for rendering
   const isEqualSplit = (exp) => { 
     const b = exp.beneficiaryIds || []; 
     if (b.length === 0) return true; 
@@ -255,44 +351,67 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
                   <div><h2 className="text-2xl font-bold text-stone-800">Day {currentDayData.day}</h2><p className="text-stone-400 text-sm">{currentDayData.date}</p></div>
                   <div className="px-3 py-1 bg-stone-50 rounded-full border border-stone-100 flex items-center gap-1.5 text-xs font-medium text-stone-600">{currentDayData.weather === 'snow' ? <span className="text-blue-400">❄️ 下雪</span> : <><Sun size={14} className="text-amber-400"/> 晴朗</>}</div>
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">{tripData.days.map((d) => (<button key={d.day} onClick={() => setActiveDay(d.day)} className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeDay === d.day ? "bg-stone-900 text-white shadow-md scale-105" : "bg-stone-100 text-stone-400 hover:bg-stone-200"}`}>Day {d.day}</button>))}</div>
-              </div>
-              <div className="px-4 md:px-8 py-8">
-                <div className="relative border-l-2 border-stone-200 ml-3 md:ml-4 space-y-10 pl-8 md:pl-10 py-2">
-                  {currentDayData.items.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <div key={item.id} className="relative group">
-                        <div className={`absolute -left-[41px] md:-left-[49px] top-0 w-8 h-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${item.type === 'transport' ? 'bg-blue-500 text-white' : item.type === 'food' ? 'bg-orange-500 text-white' : item.type === 'sightseeing' ? 'bg-emerald-500 text-white' : item.type === 'info' ? 'bg-red-500 text-white' : 'bg-stone-400 text-white'}`}><Icon size={14} strokeWidth={3} /></div>
-                        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow p-5 relative overflow-hidden">
-                          <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.type === 'transport' ? 'bg-blue-500' : item.type === 'food' ? 'bg-orange-500' : item.type === 'sightseeing' ? 'bg-emerald-500' : item.type === 'info' ? 'bg-red-500' : 'bg-stone-400'}`}></div>
-                          <div className="flex justify-between items-start mb-2 pl-2">
-                            <span className="text-xs font-bold text-stone-400 flex items-center gap-1 bg-stone-50 px-2 py-1 rounded"><Clock size={12}/> {item.time}</span>
-                            <Tag type={item.type} />
-                          </div>
-                          <div className="pl-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleItemClick(item)}>
-                            <h3 className="text-lg font-bold text-stone-800 mb-1 flex items-center gap-2">{item.title}{item.location && item.type !== 'food' && <Navigation size={14} className="text-blue-500" />}{item.type === 'food' && <Sparkles size={14} className="text-orange-500" />}</h3>
-                            <p className="text-sm text-stone-600 mb-3 flex items-start gap-1.5"><MapPin size={14} className="mt-0.5 shrink-0 text-stone-400"/> {item.note}</p>
-                            {item.desc && <div className="text-xs text-stone-500 bg-stone-50 p-3 rounded-xl leading-relaxed mb-4 whitespace-pre-line">{item.desc}</div>}
-                          </div>
-                          <div className="flex gap-2">
-                            {item.location && (<button onClick={() => copyAddress(item.location, item.id)} className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors ${copiedId === item.id ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{copiedId === item.id ? <CheckCircle2 size={14}/> : <Copy size={14}/>} 複製地址</button>)}
-                            {item.link && (<a href={item.link} target="_blank" rel="noreferrer" className="flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 bg-stone-900 text-white hover:bg-stone-700 transition-colors"><ExternalLink size={14}/> 查看詳情</a>)}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="relative pl-2"><div className="absolute -left-[35px] md:-left-[43px] top-1.5 w-4 h-4 bg-stone-300 rounded-full border-2 border-white"></div><p className="text-xs text-stone-400 italic">行程結束，晚安！</p></div>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                  {daysData.length > 0 ? daysData.map((d) => (<button key={d.day} onClick={() => setActiveDay(d.day)} className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeDay === d.day ? "bg-stone-900 text-white shadow-md scale-105" : "bg-stone-100 text-stone-400 hover:bg-stone-200"}`}>Day {d.day}</button>)) : <div className="p-2 text-sm text-stone-400">載入中...</div>}
                 </div>
+              </div>
+              
+              {/* Items List */}
+              <div className="px-4 md:px-8 py-8">
+                 {/* Add Item Button (Top) */}
+                 <button onClick={openAddScheduleModal} className="w-full mb-6 py-3 border-2 border-dashed border-stone-200 rounded-xl text-stone-400 font-bold hover:border-stone-400 hover:text-stone-600 transition-colors flex items-center justify-center gap-2">
+                    <Plus size={18}/> 新增行程
+                 </button>
+
+                {currentDayData.items.length === 0 ? (
+                    <div className="text-center py-10 text-stone-400 italic">尚未安排行程</div>
+                ) : (
+                    <div className="relative border-l-2 border-stone-200 ml-3 md:ml-4 space-y-10 pl-8 md:pl-10 py-2">
+                    {currentDayData.items.map((item) => {
+                        const Icon = item.icon || MapPin; // Fallback icon
+                        return (
+                        <div key={item.id} className="relative group">
+                            <div className={`absolute -left-[41px] md:-left-[49px] top-0 w-8 h-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${item.type === 'transport' ? 'bg-blue-500 text-white' : item.type === 'food' ? 'bg-orange-500 text-white' : item.type === 'sightseeing' ? 'bg-emerald-500 text-white' : item.type === 'info' ? 'bg-red-500 text-white' : 'bg-stone-400 text-white'}`}><Icon size={14} strokeWidth={3} /></div>
+                            
+                            {/* Card Content */}
+                            <div className="bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow p-5 relative overflow-hidden group">
+                                {/* Edit Actions */}
+                                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    <button onClick={(e) => openEditScheduleModal(item, e)} className="p-1.5 bg-stone-100 hover:bg-stone-200 rounded-full text-stone-600"><Pencil size={14}/></button>
+                                    <button onClick={() => handleDeleteScheduleItem(item.id)} className="p-1.5 bg-red-50 hover:bg-red-100 rounded-full text-red-500"><Trash2 size={14}/></button>
+                                </div>
+
+                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.type === 'transport' ? 'bg-blue-500' : item.type === 'food' ? 'bg-orange-500' : item.type === 'sightseeing' ? 'bg-emerald-500' : item.type === 'info' ? 'bg-red-500' : 'bg-stone-400'}`}></div>
+                                <div className="flex justify-between items-start mb-2 pl-2">
+                                    <span className="text-xs font-bold text-stone-400 flex items-center gap-1 bg-stone-50 px-2 py-1 rounded"><Clock size={12}/> {item.time}</span>
+                                    <Tag type={item.type} />
+                                </div>
+                                <div className="pl-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleItemClick(item)}>
+                                    <h3 className="text-lg font-bold text-stone-800 mb-1 flex items-center gap-2">{item.title}{item.location && item.type !== 'food' && <Navigation size={14} className="text-blue-500" />}{item.type === 'food' && <Sparkles size={14} className="text-orange-500" />}</h3>
+                                    <p className="text-sm text-stone-600 mb-3 flex items-start gap-1.5"><MapPin size={14} className="mt-0.5 shrink-0 text-stone-400"/> {item.note}</p>
+                                    {item.desc && <div className="text-xs text-stone-500 bg-stone-50 p-3 rounded-xl leading-relaxed mb-4 whitespace-pre-line">{item.desc}</div>}
+                                </div>
+                                <div className="flex gap-2">
+                                    {item.location && (<button onClick={() => copyAddress(item.location, item.id)} className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors ${copiedId === item.id ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{copiedId === item.id ? <CheckCircle2 size={14}/> : <Copy size={14}/>} 複製地址</button>)}
+                                    {item.link && (<a href={item.link} target="_blank" rel="noreferrer" className="flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 bg-stone-900 text-white hover:bg-stone-700 transition-colors"><ExternalLink size={14}/> 查看詳情</a>)}
+                                </div>
+                            </div>
+                        </div>
+                        );
+                    })}
+                    </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* TAB: Expenses */}
+          {/* ... Expenses & Checklist Tabs (Keep existing code) ... */}
           {activeTab === 'expenses' && (
             <div className="p-6 md:p-10 space-y-8">
-              <div className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+               {/* Keep the exact same expense tab code as before */}
+               {/* For brevity, assume existing expense code here. If you need me to paste it again, let me know. */}
+               {/* 為了完整性，這裡簡略帶過，請保留原本的 expenses 頁面內容 */}
+               <div className="bg-stone-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
                 <Wallet size={160} className="absolute -right-8 -bottom-8 text-white/5" /><p className="text-xs font-bold text-stone-400 tracking-widest uppercase mb-1">Total Budget</p>
                 <div className="flex items-center gap-2 mb-6"><span className="text-4xl font-bold">${totalSpent.toLocaleString()}</span><span className="text-stone-500 text-lg">/ {budget.toLocaleString()}</span><button onClick={() => setIsEditingBudget(!isEditingBudget)} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><Edit3 size={14}/></button></div>
                 {isEditingBudget && (<div className="mb-4 flex gap-2 animate-in fade-in slide-in-from-top-2"><input type="number" value={newBudgetInput} onChange={(e) => setNewBudgetInput(e.target.value)} className="bg-white/10 border border-white/20 rounded-lg px-3 py-1 text-sm text-white focus:outline-none w-32" /><button onClick={() => { setBudget(parseInt(newBudgetInput)); setIsEditingBudget(false); }} className="bg-green-500 px-3 py-1 rounded-lg text-xs font-bold hover:bg-green-600">儲存</button></div>)}
@@ -331,7 +450,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
                            <span className={`text-sm transition-all ${item.checked ? 'text-stone-400 line-through' : 'text-stone-700'}`}>{item.name}</span>
                          </div>
                          <button onClick={async () => {
-                           // Find doc id and delete
                            const itemRef = doc(db, 'artifacts', tripId, 'public', 'data', 'packing-list', item.id);
                            await deleteDoc(itemRef);
                          }} className="text-stone-300 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
@@ -387,7 +505,6 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
         </div>
       )}
 
-      {/* Add Person Modal */}
       {isAddPersonOpen && (
         <div className="fixed inset-0 z-[80] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center">
@@ -409,6 +526,16 @@ const TripDashboard = ({ tripId, tripInfo, onBack }) => {
              <button onClick={handleAddPerson} className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold">加入行程</button>
           </div>
         </div>
+      )}
+      
+      {/* Schedule Edit Modal */}
+      {isScheduleModalOpen && (
+        <ScheduleFormModal 
+          item={editingItem} 
+          dayIndex={activeDay}
+          onSave={handleSaveScheduleItem}
+          onClose={() => setIsScheduleModalOpen(false)}
+        />
       )}
 
       {selectedItem && (

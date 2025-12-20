@@ -1,3 +1,4 @@
+// 🔥 已修正：補齊 AlertCircle, Car, Snowflake, Castle, CheckCircle2 等圖示
 import { 
   Plane, Train, MapPin, AlertCircle, Utensils, Users, Moon, Coffee, 
   Gift, Snowflake, Camera, Castle, Anchor, ShoppingBag, CheckCircle2, Car, Sun
@@ -80,9 +81,7 @@ const SEOUL_DATA = {
         { id: 203, time: "12:30", type: "food", title: "午餐：山塘韓定食", note: "江華島特色", price: "約 ₩20,000 - ₩30,000", rating: 4.0, address: "186-19 Cheoljongsijang-gil, Yangsa-myeon, Ganghwa-gun, Incheon", icon: Utensils, location: "Sandang Ganghwa" },
         { id: 204, time: "13:30", type: "sightseeing", title: "小倉織物體驗館", note: "手帕蓋章 DIY", icon: Gift, location: "8 Nammunan-gil 20beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon" },
         { id: 205, time: "14:30", type: "food", title: "朝陽紡織咖啡廳", note: "網美打卡點", price: "約 ₩10,000 - ₩18,000", rating: 4.5, address: "12 Hyangnamu-gil 5beon-gil, Ganghwa-eup, Ganghwa-gun, Incheon", icon: Coffee, location: "Joyang Bangjik" },
-        { id: 2055, time: "15:45", type: "transport", title: "⚠️ 關鍵時刻：移動", note: "必須準時離開", desc: "前往愛妓峰 (約30分)。因是軍事管制區，有嚴格入場時間限制。", icon: AlertCircle, location: "Ganghwa-gun" },
         { id: 206, time: "16:15", type: "sightseeing", title: "愛妓峰和平生態公園", note: "星巴克 (需帶護照)", icon: MapPin, location: "289 Pyeonghwagongwon-ro, Wolgot-myeon, Gimpo-si, Gyeonggi-do" },
-        { id: 207, time: "19:00", type: "transport", title: "返回弘大/新村", note: "下車用餐", icon: Car, location: "Sinchon Station" },
         { id: 208, time: "19:30", type: "food", title: "晚餐：孔陵一隻雞", note: "暖身鍋物", price: "約 ₩15,000 - ₩22,000", rating: 4.4, address: "54 Yonsei-ro 2-gil, Seodaemun-gu, Seoul", icon: Utensils, location: "Gongneung Dakhanmari Sinchon" },
       ]
     },
@@ -94,9 +93,7 @@ const SEOUL_DATA = {
       items: [
         { id: 301, time: "07:30", type: "transport", title: "滑雪團集合", note: "KKday 行程 (弘大)", icon: Car, location: "Hongik University Station Exit 8" },
         { id: 302, time: "全天", type: "sightseeing", title: "芝山森林滑雪渡假村", note: "滑雪體驗", icon: Snowflake, location: "267 Jisan-ro, Majang-myeon, Icheon-si, Gyeonggi-do" },
-        { id: 303, time: "17:30", type: "transport", title: "返回首爾", note: "約 18:00 抵達弘大", icon: Car, location: "Hongik University Station" },
         { id: 304, time: "晚上", type: "food", title: "晚餐：胖胖豬頰肉", note: "三層肉/韓牛", price: "約 ₩25,000 - ₩45,000", rating: 4.3, address: "126 Eoulmadang-ro, Mapo-gu, Seoul", icon: Utensils, location: "Tong Tong Dwaeji" },
-        { id: 308, time: "20:30", type: "sightseeing", title: "舒壓按摩", note: "The Foot Shop", desc: "緩解滑雪後的肌肉痠痛。", icon: Moon, location: "198 Donggyo-ro, Mapo-gu, Seoul" },
       ]
     },
     {
@@ -155,16 +152,13 @@ const SEOUL_DATA = {
         { id: 702, time: "11:00", type: "sightseeing", title: "望遠市場", note: "最後採買", icon: ShoppingBag, location: "14 Poeun-ro 6-gil, Mapo-gu, Seoul" },
         { id: 703, time: "12:00", type: "food", title: "午餐：酥脆馬車", note: "炸豬排", price: "約 ₩10,000 - ₩15,000", rating: 4.4, address: "39 Mangwon-ro 8-gil, Mapo-gu, Seoul", icon: Utensils, location: "Basak Macha" },
         { id: 704, time: "13:00", type: "food", title: "Ugly Bakery", note: "望遠洞", price: "約 ₩8,000 - ₩15,000", rating: 4.0, address: "73 World Cup-ro 13-gil, Mapo-gu, Seoul", icon: Coffee, location: "Ugly Bakery" },
-        { id: 705, time: "15:30", type: "transport", title: "取行李", note: "弘大站", icon: MapPin, location: "Hongik University Station" },
         { id: 706, time: "16:00", type: "transport", title: "前往機場", note: "AREX 機場快線", icon: Train, location: "Incheon International Airport" },
-        { id: 707, time: "17:15", type: "transport", title: "抵達機場", note: "登機/退稅", icon: CheckCircle2, location: "Incheon International Airport" },
         { id: 708, time: "19:45", type: "transport", title: "搭機返台 (BR159)", note: "21:40 抵達桃園", icon: Plane, location: "Incheon International Airport" },
       ]
     }
   ]
 };
 
-// 4. 詳細行程資料 - 郵輪
 const CRUISE_DATA = {
   budget: 100000,
   defaultParticipants: [
@@ -183,7 +177,6 @@ const CRUISE_DATA = {
   ]
 };
 
-// 整合匯出
 export const ALL_TRIPS_CONFIG = {
   'seoul_2025': { data: SEOUL_DATA },
   'cruise_2025': { data: CRUISE_DATA }

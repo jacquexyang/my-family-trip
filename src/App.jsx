@@ -8,12 +8,9 @@ import TripListScreen from './components/TripListScreen';
 import TripLoginScreen from './components/TripLoginScreen';
 import TripDashboard from './components/TripDashboard';
 
-// --- Data ---
-import { TRIP_REGISTRY } from './config/tripsData';
-
 export default function App() {
   const [screen, setScreen] = useState('list'); // list, login, dashboard
-  const [selectedTripId, setSelectedTripId] = useState(null);
+  const [selectedTrip, setSelectedTrip] = useState(null); // 改存整個物件，不只 ID
 
   // Load auth state from local storage on mount
   useEffect(() => {
@@ -21,8 +18,8 @@ export default function App() {
      signInAnonymously(auth).catch(console.error);
   }, []);
 
-  const handleSelectTrip = (id) => {
-    setSelectedTripId(id);
+  const handleSelectTrip = (trip) => {
+    setSelectedTrip(trip);
     setScreen('login');
   };
 
@@ -31,33 +28,30 @@ export default function App() {
   };
 
   const handleBack = () => {
-    setSelectedTripId(null);
+    setSelectedTrip(null);
     setScreen('list');
   };
-
-  const getTripInfo = (id) => TRIP_REGISTRY.find(t => t.id === id);
 
   return (
     <div className="font-sans text-stone-700 antialiased selection:bg-stone-200">
       {screen === 'list' && (
         <TripListScreen 
           onSelectTrip={handleSelectTrip} 
-          tripRegistry={TRIP_REGISTRY} 
         />
       )}
       
-      {screen === 'login' && selectedTripId && (
+      {screen === 'login' && selectedTrip && (
         <TripLoginScreen 
-          tripInfo={getTripInfo(selectedTripId)} 
+          tripInfo={selectedTrip} 
           onUnlock={handleUnlock} 
           onBack={handleBack}
         />
       )}
 
-      {screen === 'dashboard' && selectedTripId && (
+      {screen === 'dashboard' && selectedTrip && (
         <TripDashboard 
-          tripId={selectedTripId} 
-          tripInfo={getTripInfo(selectedTripId)}
+          tripId={selectedTrip.id} 
+          tripInfo={selectedTrip}
           onBack={handleBack} 
         />
       )}
